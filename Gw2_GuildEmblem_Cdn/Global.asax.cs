@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Web;
 using System.Web.Http;
 using System.Web.Mvc;
-using System.Web.Optimization;
 using System.Web.Routing;
 
 namespace Gw2_GuildEmblem_Cdn
@@ -17,8 +17,12 @@ namespace Gw2_GuildEmblem_Cdn
 
         protected void Application_Start(object sender, EventArgs e)
         {
+
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
             Configuration.WebConfiguration.Init();
-            
+            log4net.Config.XmlConfigurator.Configure();
         }
 
         protected void Session_Start(object sender, EventArgs e)
