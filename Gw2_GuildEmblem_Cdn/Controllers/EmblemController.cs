@@ -24,6 +24,8 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
     public class EmblemController : ApiController
     {
         private const int DEFAULT_IMAGE_SIZE = 128;
+        private const int MIN_IMAGE_SIZE = 1;
+        private const int MAX_IMAGE_SIZE = 512;
 
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
@@ -75,7 +77,8 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         {
             try
             {
-                size = Math.Min(Math.Max(0, size), 512);
+                //confine sizes
+                size = Math.Min(Math.Max(MIN_IMAGE_SIZE, size), MAX_IMAGE_SIZE);
                 return await GetInternal(guildId, size);
             }
             catch (Exception ex)
