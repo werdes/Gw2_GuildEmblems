@@ -99,7 +99,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             Bitmap retImage;
             Guild guild = await GuildUtility.Instance.GetGuild(guildId);
            
-            if (guild != null)
+            if (guild != null && guild.Emblem != null)
             {
                 //Try to find in cache first
                 if (!CacheUtility.Instance.TryGet(guild, size, out retImage))
