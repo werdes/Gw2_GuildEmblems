@@ -96,15 +96,16 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         /// <returns></returns>
         private async Task<HttpResponseMessage> GetInternal(string guildId, int size)
         {
-            (Guild guild, Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors) = await GuildUtility.Instance.GetGuildInformation(guildId);
-
+            Bitmap retImage;
+            Guild guild = await GuildUtility.Instance.GetGuild(guildId);
+           
             if (guild != null)
             {
-                Bitmap retImage;
-
                 //Try to find in cache first
                 if (!CacheUtility.Instance.TryGet(guild, size, out retImage))
                 {
+                    (Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors) = await GuildUtility.Instance.GetEmblemInformation(guild);
+                    
                     retImage = await CreateEmblem(guild, emblemBackground, emblemForeground, colors, size);
 
                     CacheUtility.Instance.Set(guild, size, retImage);
@@ -114,8 +115,35 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             }
             else
             {
-                return new HttpResponseMessage(HttpStatusCode.NotFound);
+                //Return the Null Emblem
+                retImage = GetNullEmblem(size);
+                if (retImage != null)
+                    return retImage.ToHttpResponse(ImageFormat.Png);
+
+                return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
+        }
+
+        /// <summary>
+        /// Returns a resized version of the Null Emblem
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        private Bitmap GetNullEmblem(int size)
+        {
+            Bitmap retImage = null;
+
+            if (!CacheUtility.Instance.TryGet(null, size, out retImage))
+            {
+                string path = Path.Combine(HttpContext.Current.Request.PhysicalApplicationPath, ConfigurationManager.AppSettings["null_emblem"]);
+                retImage = new Bitmap(path);
+                retImage = ImageUtility.Resize(retImage, size);
+                
+
+                CacheUtility.Instance.Set(null, size, retImage);
+            }
+
+            return retImage;
         }
 
         /// <summary>

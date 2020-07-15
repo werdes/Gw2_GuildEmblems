@@ -35,17 +35,40 @@ namespace Gw2_GuildEmblem_Cdn.Utility
             });
         }
 
-        public async Task<(Guild, Emblem, Emblem, List<Color>)> GetGuildInformation(string guildId)
+        /// <summary>
+        /// Returns a guild from the API
+        /// </summary>
+        /// <param name="guildId"></param>
+        /// <returns></returns>
+        public async Task<Guild> GetGuild(string guildId)
         {
-            List<Color> colors = new List<Color>();
+            Guild guild = null;
             try
             {
                 _ratelimitHandler.Wait();
 
                 IGuildClient guildClient = _client.WebApi.V2.Guild;
-                Guild guild = await guildClient[guildId].GetAsync();
-                _ratelimitHandler.Set();
+                guild = await guildClient[guildId].GetAsync();
 
+                _ratelimitHandler.Set();
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex);
+            }
+            return guild;
+        }
+
+        /// <summary>
+        /// Returns necessary information for emblem generation
+        /// </summary>
+        /// <param name="guild"></param>
+        /// <returns></returns>
+        public async Task<(Emblem, Emblem, List<Color>)> GetEmblemInformation(Guild guild)
+        {
+            List<Color> colors = new List<Color>();
+            try
+            {
                 if (guild != null)
                 {
                     _ratelimitHandler.Wait();
@@ -60,15 +83,11 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                     colorIds.AddRange(guild.Emblem.Background.Colors);
                     colorIds = colorIds.Distinct().ToList();
 
-
-                    foreach (int colorId in colorIds)
-                    {
-                        _ratelimitHandler.Wait();
-                        colors.Add(await _client.WebApi.V2.Colors.GetAsync(colorId));
-                        _ratelimitHandler.Set();
-                    }
-
-                    return (guild, emblemBackground, emblemForeground, colors);
+                    _ratelimitHandler.Wait();
+                    colors.AddRange(await _client.WebApi.V2.Colors.ManyAsync(colorIds));
+                    _ratelimitHandler.Set();
+                   
+                    return (emblemBackground, emblemForeground, colors);
                 }
             }
             catch (Exception ex)
@@ -76,9 +95,14 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                 _log.Error(ex);
             }
 
-            return (null, null, null, null);
+            return (null, null, null);
         }
 
+        /// <summary>
+        /// Downloads an image from the render API
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         public async Task<System.Drawing.Image> GetImage(RenderUrl url)
         {
             _ratelimitHandler.Wait();
