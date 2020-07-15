@@ -66,7 +66,7 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         /// <returns></returns>
         private string GetFilename(Guild guild, int size)
         {
-            if (guild != null)
+            if (guild != null && guild.Emblem != null)
             {
                 string flags = guild.Emblem.Flags.Count() > 0 ? $"_{string.Join(".", guild.Emblem.Flags.Select(x => x.Value))}" : string.Empty;
                 return $"{guild.Emblem.Background.Id}-{string.Join(".", guild.Emblem.Background.Colors)}_{guild.Emblem.Foreground.Id}-{string.Join(".", guild.Emblem.Foreground.Colors)}{flags}_{size}.png";
