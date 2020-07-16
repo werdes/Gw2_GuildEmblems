@@ -196,13 +196,13 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
 
                     if (color != null)
                     {
-                        List<RotateFlipType> flipTypes = new List<RotateFlipType>();
-                        if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipBackgroundHorizontal))
-                            flipTypes.Add(RotateFlipType.RotateNoneFlipX);
-                        if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipBackgroundVertical))
-                            flipTypes.Add(RotateFlipType.RotateNoneFlipY);
+                        List<RotateFlipType> transformations = new List<RotateFlipType>();
+                        if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipForegroundHorizontal))
+                            transformations.Add(RotateFlipType.RotateNoneFlipX);
+                        if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipForegroundVertical))
+                            transformations.Add(RotateFlipType.RotateNoneFlipY);
 
-                        lstLayers.Add((foregrounds[i], System.Drawing.Color.FromArgb(color.Cloth.Rgb[0], color.Cloth.Rgb[1], color.Cloth.Rgb[2]), flipTypes));
+                        lstLayers.Add((foregrounds[i], System.Drawing.Color.FromArgb(color.Cloth.Rgb[0], color.Cloth.Rgb[1], color.Cloth.Rgb[2]), transformations));
                     }
                 }
             }
@@ -212,14 +212,14 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             // 3.) Apply Rotations/Flips
             // 4.) Resize if necessary
             List<Bitmap> layers = new List<Bitmap>();
-            foreach ((RenderUrl url, System.Drawing.Color shadeColor, List<RotateFlipType> rotations) in lstLayers)
+            foreach ((RenderUrl url, System.Drawing.Color shadeColor, List<RotateFlipType> transformations) in lstLayers)
             {
                 Bitmap layer =
                     ImageUtility.ApplyRotations(
                         ImageUtility.ShadeImageFromAlpha(
                             (Bitmap)await GuildUtility.Instance.GetImage(url),
                         shadeColor),
-                    rotations);
+                    transformations);
 
                 if (size != DEFAULT_IMAGE_SIZE)
                 {
