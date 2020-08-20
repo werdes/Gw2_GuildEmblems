@@ -32,7 +32,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
 
         /// <summary>
         /// Returns the Guild emblem of said guild-id in 128x128px
-        /// 404 if the guild cannot be found via API
+        /// Empty emblem when guild not found/guild has no emblem
         /// 500 on random exceptions
         /// </summary>
         /// <param name="guildId"></param>
@@ -41,7 +41,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         [AllowCrossSiteJson]
         [Route("emblem/{guildId}")]
         [OutputCache(
-            MaxAge = 60 * 60 * 24, //24 Hours
+            MaxAge = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/,
             StaleWhileRevalidate = 5,
             VaryByParam = "*",
             IgnoreRevalidationRequest = true)]
@@ -97,18 +97,18 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         private async Task<HttpResponseMessage> GetInternal(string guildId, int size)
         {
             Bitmap retImage;
-            Guild guild = await GuildUtility.Instance.GetGuild(guildId);
+            Guild guild = await ApiUtility.Instance.GetGuild(guildId);
            
             if (guild != null && guild.Emblem != null)
             {
                 //Try to find in cache first
-                if (!CacheUtility.Instance.TryGet(guild, size, out retImage))
+                if (!CacheUtility.Instance.TryGetEmblem(guild, size, out retImage))
                 {
-                    (Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors) = await GuildUtility.Instance.GetEmblemInformation(guild);
+                    (Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors) = await ApiUtility.Instance.GetEmblemInformation(guild);
                     
                     retImage = await CreateEmblem(guild, emblemBackground, emblemForeground, colors, size);
 
-                    CacheUtility.Instance.Set(guild, size, retImage);
+                    CacheUtility.Instance.SetEmblem(guild, size, retImage);
                 }
 
                 return retImage.ToHttpResponse(ImageFormat.Png);
@@ -133,14 +133,14 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         {
             Bitmap retImage = null;
 
-            if (!CacheUtility.Instance.TryGet(null, size, out retImage))
+            if (!CacheUtility.Instance.TryGetEmblem(null, size, out retImage))
             {
                 string path = Path.Combine(HttpContext.Current.Request.PhysicalApplicationPath, ConfigurationManager.AppSettings["null_emblem"]);
                 retImage = new Bitmap(path);
                 retImage = ImageUtility.Resize(retImage, size);
                 
 
-                CacheUtility.Instance.Set(null, size, retImage);
+                CacheUtility.Instance.SetEmblem(null, size, retImage);
             }
 
             return retImage;
@@ -217,7 +217,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
                 Bitmap layer =
                     ImageUtility.ApplyRotations(
                         ImageUtility.ShadeImageFromAlpha(
-                            (Bitmap)await GuildUtility.Instance.GetImage(url),
+                            (Bitmap)await ApiUtility.Instance.GetImage(url),
                         shadeColor),
                     transformations);
 

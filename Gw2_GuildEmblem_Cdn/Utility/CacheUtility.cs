@@ -6,11 +6,15 @@ using System.Linq;
 using System.Web;
 using System.IO;
 using System.Configuration;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Gw2_GuildEmblem_Cdn.Utility
 {
     public class CacheUtility
     {
+        private const string EMBLEM_CACHE_PATH = "emblem";
+
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private static Lazy<CacheUtility> _instance = new Lazy<CacheUtility>(() => new CacheUtility());
         public static CacheUtility Instance
@@ -24,15 +28,15 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         }
 
         /// <summary>
-        /// Tries to get an image from cache
+        /// Tries to get an emblem from cache
         /// </summary>
         /// <param name="guild"></param>
         /// <param name="size"></param>
         /// <param name="retVal"></param>
         /// <returns></returns>
-        public bool TryGet(Guild guild, int size, out Bitmap retVal)
+        public bool TryGetEmblem(Guild guild, int size, out Bitmap retVal)
         {
-            string filePath = Path.Combine(ConfigurationManager.AppSettings["cache_path"], GetFilename(guild, size));
+            string filePath = Path.Combine(ConfigurationManager.AppSettings["cache_path"], EMBLEM_CACHE_PATH, GetEmblemFilename(guild, size));
             if(System.IO.File.Exists(filePath))
             {
                 retVal = new Bitmap(filePath);
@@ -52,9 +56,9 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         /// <param name="guild"></param>
         /// <param name="size"></param>
         /// <param name="image"></param>
-        public void Set(Guild guild, int size, Bitmap image)
+        public void SetEmblem(Guild guild, int size, Bitmap image)
         {
-            string filePath = Path.Combine(ConfigurationManager.AppSettings["cache_path"], GetFilename(guild, size));
+            string filePath = Path.Combine(ConfigurationManager.AppSettings["cache_path"], EMBLEM_CACHE_PATH, GetEmblemFilename(guild, size));
             image.Save(filePath);
         }
 
@@ -64,7 +68,7 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         /// <param name="guild"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        private string GetFilename(Guild guild, int size)
+        private string GetEmblemFilename(Guild guild, int size)
         {
             if (guild != null && guild.Emblem != null)
             {

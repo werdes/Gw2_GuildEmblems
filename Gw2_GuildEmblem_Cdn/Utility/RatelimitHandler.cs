@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Gw2Sharp.WebApi.V2;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 
@@ -34,6 +36,18 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                     _accessTimes.Dequeue();
                 }
             }
+        }
+
+        public void Set(ApiV2BaseObject apiObj)
+        {
+            if (apiObj.HttpResponseInfo.CacheState != Gw2Sharp.WebApi.Http.CacheState.FromCache)
+                Set();
+        }
+
+        public void Set(IEnumerable<ApiV2BaseObject> lstApiObjects)
+        {
+            if (lstApiObjects.Any(x => x.HttpResponseInfo.CacheState != Gw2Sharp.WebApi.Http.CacheState.FromCache))
+                Set();
         }
 
         /// <summary>

@@ -49,7 +49,8 @@ namespace Gw2_GuildEmblem_Cdn
 
         protected void Application_End(object sender, EventArgs e)
         {
-
+            Utility.ApiUtility.Instance.Dispose();
+            _log.Info("Application end");            
         }
     }
 }
