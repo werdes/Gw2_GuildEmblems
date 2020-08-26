@@ -27,25 +27,34 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private RatelimitHandler _ratelimitHandler = null;
 
-        private Gw2Sharp.Gw2Client _cachedClient = null;
+        private Gw2Sharp.Gw2Client _memoryCachedClient = null;
+        private Gw2Sharp.Gw2Client _archiveCachedClient = null;
 
-        private Gw2Sharp.Connection _cachedConnection = null;
-        private ArchiveCacheMethod _renderCacheArchiveMethod = null;
-        private MemoryCacheMethod _memoryCacheMethod = null;
+        private Gw2Sharp.Connection _memoryCachedConnection = null;
+        private Gw2Sharp.Connection _archiveCachedConnection = null;
+        private ArchiveCacheMethod _archiveRenderCacheMethod = null;
+        private MemoryCacheMethod _memoryWebApiCacheMethod = null;
+        private ArchiveCacheMethod _archiveWebApiCacheMethod = null;
 
         private ApiUtility()
         {
             _ratelimitHandler = new RatelimitHandler(100, nameof(ApiUtility));
-            _renderCacheArchiveMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "render.zip"));
-            _memoryCacheMethod = new DelayedExpiryMemoryCacheMethod(TimeSpan.FromDays(1), 1000 /*ms*/ * 60 /*sec*/ * 60 /*min*/ * 24 /*hrs*/);
+            _archiveRenderCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "render.zip"));
+            _archiveWebApiCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "cache.zip"));
+            _memoryWebApiCacheMethod = new DelayedExpiryMemoryCacheMethod(TimeSpan.FromDays(1), 1000 /*ms*/ * 60 /*sec*/ * 60 /*min*/ * 24 /*hrs*/);
 
-            _cachedConnection = new Gw2Sharp.Connection()
+            _memoryCachedConnection = new Gw2Sharp.Connection()
             {
-                CacheMethod = _memoryCacheMethod,
-                RenderCacheMethod = _renderCacheArchiveMethod
+                CacheMethod = _memoryWebApiCacheMethod
+            };
+            _archiveCachedConnection = new Gw2Sharp.Connection()
+            {
+                CacheMethod = _archiveWebApiCacheMethod,
+                RenderCacheMethod = _archiveRenderCacheMethod
             };
 
-            _cachedClient = new Gw2Sharp.Gw2Client(_cachedConnection);
+            _memoryCachedClient = new Gw2Sharp.Gw2Client(_memoryCachedConnection);
+            _archiveCachedClient = new Gw2Sharp.Gw2Client(_archiveCachedConnection);
         }
 
         /// <summary>
@@ -60,7 +69,7 @@ namespace Gw2_GuildEmblem_Cdn.Utility
             {
                 _ratelimitHandler.Wait();
 
-                IGuildClient guildClient = _cachedClient.WebApi.V2.Guild;
+                IGuildClient guildClient = _memoryCachedClient.WebApi.V2.Guild;
                 guild = await guildClient[guildId].GetAsync();
 
                 _ratelimitHandler.Set(guild);
@@ -88,12 +97,12 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                 if (guild != null)
                 {
                     _ratelimitHandler.Wait();
-                    emblemBackground = await _cachedClient.WebApi.V2.Emblem.Backgrounds.GetAsync(guild.Emblem.Background.Id);
+                    emblemBackground = await _archiveCachedClient.WebApi.V2.Emblem.Backgrounds.GetAsync(guild.Emblem.Background.Id);
                     _ratelimitHandler.Set(emblemBackground);
 
 
                     _ratelimitHandler.Wait();
-                    emblemForeground = await _cachedClient.WebApi.V2.Emblem.Foregrounds.GetAsync(guild.Emblem.Foreground.Id);
+                    emblemForeground = await _archiveCachedClient.WebApi.V2.Emblem.Foregrounds.GetAsync(guild.Emblem.Foreground.Id);
                     _ratelimitHandler.Set(emblemForeground);
 
 
@@ -102,7 +111,7 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                     colorIds = colorIds.Distinct().ToList();
 
                     _ratelimitHandler.Wait();
-                    colors.AddRange(await _cachedClient.WebApi.V2.Colors.ManyAsync(colorIds));
+                    colors.AddRange(await _archiveCachedClient.WebApi.V2.Colors.ManyAsync(colorIds));
                     _ratelimitHandler.Set(colors);
 
                     return (emblemBackground, emblemForeground, colors);
@@ -123,7 +132,7 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         /// <returns></returns>
         public async Task<System.Drawing.Image> GetImage(RenderUrl url)
         {
-            byte[] buffer = await _cachedClient.WebApi.Render.DownloadToByteArrayAsync(url.Url);
+            byte[] buffer = await _archiveCachedClient.WebApi.Render.DownloadToByteArrayAsync(url.Url);
 
             using (Stream stream = new MemoryStream(buffer))
             {
@@ -140,10 +149,12 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         {
             if (!_isDisposed)
             {
-                _renderCacheArchiveMethod.Dispose();
-                _memoryCacheMethod.Dispose();
+                _archiveRenderCacheMethod.Dispose();
+                _archiveWebApiCacheMethod.Dispose();
+                _memoryWebApiCacheMethod.Dispose();
 
-                _cachedClient.Dispose();
+                _memoryCachedClient.Dispose();
+                _archiveCachedClient.Dispose();
 
                 _isDisposed = true;
             }

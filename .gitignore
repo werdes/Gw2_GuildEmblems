@@ -347,3 +347,8 @@ healthchecksdb
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
+
+# Config
+Gw2_GuildEmblem_Cdn/Web.Debug.config
+
+Gw2_GuildEmblem_Cdn/Web.Release.config
