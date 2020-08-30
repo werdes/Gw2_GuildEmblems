@@ -1,4 +1,5 @@
-﻿using Gw2_GuildEmblem_Cdn.Custom.Caching;
+﻿using Gw2_GuildEmblem_Cdn.Custom.Gw2SharpWebApi.Caching;
+using Gw2_GuildEmblem_Cdn.Custom.Gw2SharpWebApi.Middleware;
 using Gw2Sharp.WebApi;
 using Gw2Sharp.WebApi.Caching;
 using Gw2Sharp.WebApi.V2.Clients;
@@ -25,7 +26,6 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         }
 
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private RatelimitHandler _ratelimitHandler = null;
 
         private Gw2Sharp.Gw2Client _memoryCachedClient = null;
         private Gw2Sharp.Gw2Client _archiveCachedClient = null;
@@ -38,7 +38,6 @@ namespace Gw2_GuildEmblem_Cdn.Utility
 
         private ApiUtility()
         {
-            _ratelimitHandler = new RatelimitHandler(100, nameof(ApiUtility));
             _archiveRenderCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "render.zip"));
             _archiveWebApiCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "cache.zip"));
             _memoryWebApiCacheMethod = new DelayedExpiryMemoryCacheMethod(TimeSpan.FromDays(1), 1000 /*ms*/ * 60 /*sec*/ * 60 /*min*/ * 24 /*hrs*/);
@@ -52,6 +51,10 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                 CacheMethod = _archiveWebApiCacheMethod,
                 RenderCacheMethod = _archiveRenderCacheMethod
             };
+
+
+            _memoryCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware());
+            _archiveCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware());
 
             _memoryCachedClient = new Gw2Sharp.Gw2Client(_memoryCachedConnection);
             _archiveCachedClient = new Gw2Sharp.Gw2Client(_archiveCachedConnection);
@@ -67,12 +70,8 @@ namespace Gw2_GuildEmblem_Cdn.Utility
             Guild guild = null;
             try
             {
-                _ratelimitHandler.Wait();
-
                 IGuildClient guildClient = _memoryCachedClient.WebApi.V2.Guild;
                 guild = await guildClient[guildId].GetAsync();
-
-                _ratelimitHandler.Set(guild);
             }
             catch (Exception ex)
             {
@@ -96,23 +95,15 @@ namespace Gw2_GuildEmblem_Cdn.Utility
             {
                 if (guild != null)
                 {
-                    _ratelimitHandler.Wait();
                     emblemBackground = await _archiveCachedClient.WebApi.V2.Emblem.Backgrounds.GetAsync(guild.Emblem.Background.Id);
-                    _ratelimitHandler.Set(emblemBackground);
-
-
-                    _ratelimitHandler.Wait();
                     emblemForeground = await _archiveCachedClient.WebApi.V2.Emblem.Foregrounds.GetAsync(guild.Emblem.Foreground.Id);
-                    _ratelimitHandler.Set(emblemForeground);
 
 
                     List<int> colorIds = guild.Emblem.Foreground.Colors.ToList();
                     colorIds.AddRange(guild.Emblem.Background.Colors);
                     colorIds = colorIds.Distinct().ToList();
 
-                    _ratelimitHandler.Wait();
                     colors.AddRange(await _archiveCachedClient.WebApi.V2.Colors.ManyAsync(colorIds));
-                    _ratelimitHandler.Set(colors);
 
                     return (emblemBackground, emblemForeground, colors);
                 }

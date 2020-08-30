@@ -69,7 +69,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         [AllowCrossSiteJson]
         [Route("emblem/{guildId}/{size}")]
         [OutputCache(
-            MaxAge = 60 * 60 * 24, //24 Hours
+            MaxAge = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/,
             StaleWhileRevalidate = 5,
             VaryByParam = "*",
             IgnoreRevalidationRequest = true)]

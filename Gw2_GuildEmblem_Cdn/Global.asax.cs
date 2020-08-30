@@ -17,7 +17,6 @@ namespace Gw2_GuildEmblem_Cdn
 
         protected void Application_Start(object sender, EventArgs e)
         {
-
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 

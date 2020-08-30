@@ -3,21 +3,16 @@ using Gw2Sharp.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Web;
+using System.Threading.Tasks;
 
-
-namespace Gw2_GuildEmblem_Cdn.Custom.Caching
+namespace Gw2_GuildEmblem_Cdn.Custom.Gw2SharpWebApi.Caching
 {
-    public class DelayedExpiryMemoryCacheMethod : MemoryCacheMethod
+    public class DelayedExpiryArchiveCacheMethod : ArchiveCacheMethod
     {
         public TimeSpan ExpiryDelay { get; set; }
 
-        public DelayedExpiryMemoryCacheMethod(TimeSpan expiryDelay) : this(expiryDelay, 5 * 60 * 1000)
-        {
-        }
-
-        public DelayedExpiryMemoryCacheMethod(TimeSpan expiryDelay, int gcTimeout) : base(gcTimeout)
+        public DelayedExpiryArchiveCacheMethod(TimeSpan expiryDelay, string archiveFileName) : base(archiveFileName)
         {
             ExpiryDelay = expiryDelay;
         }

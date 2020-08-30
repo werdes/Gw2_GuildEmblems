@@ -1,4 +1,5 @@
-﻿using Gw2Sharp.WebApi.V2;
+﻿using Gw2Sharp.WebApi.Http;
+using Gw2Sharp.WebApi.V2;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -10,6 +11,8 @@ namespace Gw2_GuildEmblem_Cdn.Utility
 {
     public class RatelimitHandler
     {
+        private const string CACHSE_STATE_HEADER_KEY = "X-Gw2Sharp-Cache-State";
+
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private int _limit;
         private string _name;
@@ -38,16 +41,41 @@ namespace Gw2_GuildEmblem_Cdn.Utility
             }
         }
 
+        /// <summary>
+        /// Set based on Api Response Cache-State
+        /// </summary>
+        /// <param name="apiObj"></param>
         public void Set(ApiV2BaseObject apiObj)
         {
             if (apiObj.HttpResponseInfo.CacheState != Gw2Sharp.WebApi.Http.CacheState.FromCache)
                 Set();
         }
 
+        /// <summary>
+        /// Set based on Api Response Cache-State
+        /// </summary>
+        /// <param name="lstApiObjects"></param>
         public void Set(IEnumerable<ApiV2BaseObject> lstApiObjects)
         {
             if (lstApiObjects.Any(x => x.HttpResponseInfo.CacheState != Gw2Sharp.WebApi.Http.CacheState.FromCache))
                 Set();
+        }
+
+        /// <summary>
+        /// Set based on Api Response Cache-State
+        /// </summary>
+        /// <param name="apiResponse"></param>
+        public void Set(IWebApiResponse apiResponse)
+        {
+            CacheState cacheState;
+            if (apiResponse.ResponseHeaders.ContainsKey(CACHSE_STATE_HEADER_KEY) &&
+               Enum.TryParse(apiResponse.ResponseHeaders[CACHSE_STATE_HEADER_KEY], out cacheState))
+            {
+                if (cacheState != CacheState.FromCache)
+                {
+                    Set();
+                }
+            }
         }
 
         /// <summary>
