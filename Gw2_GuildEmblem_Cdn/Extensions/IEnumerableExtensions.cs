@@ -25,5 +25,11 @@ namespace Gw2_GuildEmblem_Cdn.Extensions
             value = default(T);
             return false;
         }
+
+        public static string Join<T>(this IEnumerable<T> lst, string separator)
+        {
+            string[] strings = lst.Select(x => x.ToString()).ToArray();
+            return string.Join(separator, strings);
+        }
     }
 }

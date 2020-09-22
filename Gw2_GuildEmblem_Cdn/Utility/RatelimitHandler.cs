@@ -1,4 +1,5 @@
-﻿using Gw2Sharp.WebApi.Http;
+﻿using Gw2_GuildEmblem_Cdn.Extensions;
+using Gw2Sharp.WebApi.Http;
 using Gw2Sharp.WebApi.V2;
 using System;
 using System.Collections.Concurrent;
@@ -11,7 +12,6 @@ namespace Gw2_GuildEmblem_Cdn.Utility
 {
     public class RatelimitHandler
     {
-        private const string CACHSE_STATE_HEADER_KEY = "X-Gw2Sharp-Cache-State";
 
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private int _limit;
@@ -67,14 +67,10 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         /// <param name="apiResponse"></param>
         public void Set(IWebApiResponse apiResponse)
         {
-            CacheState cacheState;
-            if (apiResponse.ResponseHeaders.ContainsKey(CACHSE_STATE_HEADER_KEY) &&
-               Enum.TryParse(apiResponse.ResponseHeaders[CACHSE_STATE_HEADER_KEY], out cacheState))
+            CacheState cacheState = apiResponse.GetCacheState();
+            if (cacheState != CacheState.FromCache)
             {
-                if (cacheState != CacheState.FromCache)
-                {
-                    Set();
-                }
+                Set();
             }
         }
 
@@ -106,6 +102,8 @@ namespace Gw2_GuildEmblem_Cdn.Utility
                 if (_accessTimes.Count >= _limit)
                 {
                     _log.Info($"[{_name}] Waiting for Ratelimit {_accessTimes.Peek()}");
+                    StatisticsUtility.Instance.RegisterRatelimitExceedanceAsync();
+
                     while (_accessTimes.Peek() > DateTime.Now.AddMinutes(-1D))
                     {
                         Thread.Sleep(1000);

@@ -49,14 +49,11 @@
     <Reference Include="Flatwhite, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Flatwhite.1.0.26\lib\net45\Flatwhite.dll</HintPath>
     </Reference>
-    <Reference Include="Flatwhite.WebApi, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Flatwhite.WebApi.1.0.26\lib\net45\Flatwhite.WebApi.dll</HintPath>
-    </Reference>
     <Reference Include="Gw2Sharp, Version=0.11.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Gw2Sharp.0.11.1\lib\netstandard2.0\Gw2Sharp.dll</HintPath>
     </Reference>
-    <Reference Include="log4net, Version=2.0.8.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
-      <HintPath>..\packages\log4net.2.0.8\lib\net45-full\log4net.dll</HintPath>
+    <Reference Include="log4net, Version=2.0.9.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
+      <HintPath>..\packages\log4net.2.0.9\lib\net45\log4net.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.1.1.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
@@ -72,6 +69,13 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.IO.Compression.ZipFile, Version=4.0.2.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.Compression.ZipFile.4.3.0\lib\net46\System.IO.Compression.ZipFile.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Memory.4.5.3\lib\netstandard2.0\System.Memory.dll</HintPath>
     </Reference>
@@ -79,6 +83,7 @@
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.7.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
@@ -157,23 +162,41 @@
     <Compile Include="Configuration\JsonContentNegotiator.cs" />
     <Compile Include="Configuration\WebConfiguration.cs" />
     <Compile Include="Controllers\EmblemController.cs" />
+    <Compile Include="Controllers\StatisticsController.cs" />
+    <Compile Include="Custom\FlatwhiteCache\CacheResponseEventArgs.cs" />
+    <Compile Include="Custom\FlatwhiteCache\EventCacheResponseBuilder.cs" />
+    <Compile Include="Custom\FlatwhiteCache\FlatwhiteLog4netLogger.cs" />
+    <Compile Include="Custom\FlatwhiteCache\LogStatisticsAttribute.cs" />
     <Compile Include="Custom\Gw2SharpWebApi\Caching\DelayedExpiryArchiveCacheMethod.cs" />
     <Compile Include="Custom\Gw2SharpWebApi\Middleware\RateLimiterMiddleware.cs" />
+    <Compile Include="Custom\Gw2SharpWebApi\Middleware\StatisticsMiddleware.cs" />
+    <Compile Include="Extensions\GuildEmblemExtensions.cs" />
     <Compile Include="Extensions\IEnumerableExtensions.cs" />
     <Compile Include="Extensions\ImageExtensions.cs" />
+    <Compile Include="Extensions\IWebApiResponseExtensions.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Custom\Gw2SharpWebApi\Caching\DelayedExpiryMemoryCacheMethod.cs" />
+    <Compile Include="Model\Statistics\ApiEndpointCallContainer.cs" />
+    <Compile Include="Model\Statistics\EmblemCreationContainer.cs" />
+    <Compile Include="Model\Statistics\Output\Statistics.cs" />
+    <Compile Include="Model\Statistics\ResponseContainer.cs" />
+    <Compile Include="Model\Statistics\StatisticsContainer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utility\CacheUtility.cs" />
     <Compile Include="Utility\ImageUtility.cs" />
     <Compile Include="Utility\ApiUtility.cs" />
     <Compile Include="Utility\RatelimitHandler.cs" />
+    <Compile Include="Utility\StatisticsUtility.cs" />
+    <Compile Include="Utility\ThreadHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
+    <Content Include="index.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\null_emblem.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -191,6 +214,12 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="Properties\PublishProfiles\FTP.pubxml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Flatwhite\Flatwhite.WebApi\Flatwhite.WebApi.csproj">
+      <Project>{31cdf9b3-0801-484b-a915-03cc8c81ec5b}</Project>
+      <Name>Flatwhite.WebApi</Name>
+    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

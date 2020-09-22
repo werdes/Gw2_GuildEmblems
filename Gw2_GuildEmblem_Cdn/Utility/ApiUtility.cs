@@ -38,8 +38,8 @@ namespace Gw2_GuildEmblem_Cdn.Utility
 
         private ApiUtility()
         {
-            _archiveRenderCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "render.zip"));
-            _archiveWebApiCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(1), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "cache.zip"));
+            _archiveRenderCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(7), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "render.zip"));
+            _archiveWebApiCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(7), Path.Combine(ConfigurationManager.AppSettings["cache_path"], "cache.zip"));
             _memoryWebApiCacheMethod = new DelayedExpiryMemoryCacheMethod(TimeSpan.FromDays(1), 1000 /*ms*/ * 60 /*sec*/ * 60 /*min*/ * 24 /*hrs*/);
 
             _memoryCachedConnection = new Gw2Sharp.Connection()
@@ -55,6 +55,9 @@ namespace Gw2_GuildEmblem_Cdn.Utility
 
             _memoryCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware());
             _archiveCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware());
+
+            _memoryCachedConnection.Middleware.Insert(0, new StatisticsMiddleware());
+            _archiveCachedConnection.Middleware.Insert(0, new StatisticsMiddleware());
 
             _memoryCachedClient = new Gw2Sharp.Gw2Client(_memoryCachedConnection);
             _archiveCachedClient = new Gw2Sharp.Gw2Client(_archiveCachedConnection);

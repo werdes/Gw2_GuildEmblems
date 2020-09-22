@@ -1,29 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using Flatwhite.WebApi;
 using Gw2_GuildEmblem_Cdn.Configuration;
-using Flatwhite.WebApi;
-using System.Web.Http;
-using System.Net.Http;
-using System.Drawing;
-using System.IO;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Drawing.Drawing2D;
+using Gw2_GuildEmblem_Cdn.Custom.FlatwhiteCache;
 using Gw2_GuildEmblem_Cdn.Extensions;
-using System.Drawing.Imaging;
-using Gw2Sharp.WebApi.V2.Models;
 using Gw2_GuildEmblem_Cdn.Utility;
-using System.Threading.Tasks;
 using Gw2Sharp.WebApi;
+using Gw2Sharp.WebApi.V2.Models;
+using System;
+using System.Collections.Generic;
 using System.Configuration;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using System.Web;
+using System.Web.Http;
 
 namespace Gw2_GuildEmblem_Cdn.Controllers
 {
     public class EmblemController : ApiController
     {
-        private const int DEFAULT_IMAGE_SIZE = 128;
+        public const int DEFAULT_IMAGE_SIZE = 128;
         private const int MIN_IMAGE_SIZE = 1;
         private const int MAX_IMAGE_SIZE = 512;
 
@@ -45,10 +47,14 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             StaleWhileRevalidate = 5,
             VaryByParam = "*",
             IgnoreRevalidationRequest = true)]
+        [LogStatistics]
         public async Task<HttpResponseMessage> Get(string guildId)
         {
             try
             {
+                //Register for Request (If it comes through to here, it's not cached)
+                StatisticsUtility.Instance.RegisterResponseAsync(Request, false);
+
                 return await GetInternal(guildId, DEFAULT_IMAGE_SIZE);
             }
             catch (Exception ex)
@@ -73,13 +79,53 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             StaleWhileRevalidate = 5,
             VaryByParam = "*",
             IgnoreRevalidationRequest = true)]
+        [LogStatistics]
         public async Task<HttpResponseMessage> GetResized(string guildId, int size)
         {
             try
             {
+                //Register for Request (If it comes through to here, it's not cached)
+                StatisticsUtility.Instance.RegisterResponseAsync(Request, false);
+
                 //confine sizes
                 size = Math.Min(Math.Max(MIN_IMAGE_SIZE, size), MAX_IMAGE_SIZE);
                 return await GetInternal(guildId, size);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex);
+            }
+            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+        }
+
+        /// <summary>
+        /// Returns an emblem by its descriptor string
+        ///     Will not create any emblems, 404 if the emblem hasn't been created / the descriptor string doesn't match
+        /// </summary>
+        /// <param name="descriptor"></param>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowCrossSiteJson]
+        [Route("emblem/raw/{descriptor}")]
+        [OutputCache(
+            MaxAge = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/,
+            StaleWhileRevalidate = 5,
+            VaryByParam = "*",
+            IgnoreRevalidationRequest = true)]
+        public HttpResponseMessage GetRaw(string descriptor)
+        {
+            try
+            {
+                if (CacheUtility.CACHE_NAME_VALIDATOR.IsMatch(descriptor))
+                {
+                    Bitmap emblem = null;
+                    if(CacheUtility.Instance.TryGetRaw(descriptor, out emblem))
+                    {
+                        return emblem.ToHttpResponse(ImageFormat.Png);
+                    }
+                    else return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }
+                else return new HttpResponseMessage(HttpStatusCode.NotFound);
             }
             catch (Exception ex)
             {
@@ -123,6 +169,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
         }
+
 
         /// <summary>
         /// Returns a resized version of the Null Emblem
@@ -228,6 +275,9 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
 
                 layers.Add(layer);
             }
+
+            //Register for statistics purposes
+            StatisticsUtility.Instance.RegisterCreationAsync(guild, size);
 
             //Merge layers
             Bitmap retImage = ImageUtility.LayerImages(layers);

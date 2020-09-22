@@ -5,6 +5,10 @@ VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gw2_GuildEmblem_Cdn", "Gw2_GuildEmblem_Cdn\Gw2_GuildEmblem_Cdn.csproj", "{70C442C7-9526-440F-85C4-4D171E13748F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gw2_GuildEmblem_Cdn.Test", "Gw2_GuildEmblem_Cdn.Test\Gw2_GuildEmblem_Cdn.Test.csproj", "{A6BDC21D-43B2-44CB-B23B-6D101C84C93E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flatwhite.WebApi", "..\Flatwhite\Flatwhite.WebApi\Flatwhite.WebApi.csproj", "{31CDF9B3-0801-484B-A915-03CC8C81EC5B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{70C442C7-9526-440F-85C4-4D171E13748F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{70C442C7-9526-440F-85C4-4D171E13748F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{70C442C7-9526-440F-85C4-4D171E13748F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6BDC21D-43B2-44CB-B23B-6D101C84C93E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6BDC21D-43B2-44CB-B23B-6D101C84C93E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6BDC21D-43B2-44CB-B23B-6D101C84C93E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6BDC21D-43B2-44CB-B23B-6D101C84C93E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{31CDF9B3-0801-484B-A915-03CC8C81EC5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31CDF9B3-0801-484B-A915-03CC8C81EC5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31CDF9B3-0801-484B-A915-03CC8C81EC5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31CDF9B3-0801-484B-A915-03CC8C81EC5B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
