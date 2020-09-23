@@ -335,6 +335,11 @@
             The checksum of the Content
             </summary>
         </member>
+        <member name="P:Flatwhite.WebApi.WebApiCacheItem.ResponseHeaders">
+            <summary>
+            Response Headers
+            </summary>
+        </member>
         <member name="P:Flatwhite.WebApi.WebApiCacheItem.ResponseMediaType">
             <summary>
             Media type

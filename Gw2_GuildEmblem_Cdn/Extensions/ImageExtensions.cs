@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Gw2_GuildEmblem_Cdn.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -19,7 +20,7 @@ namespace Gw2_GuildEmblem_Cdn.Extensions
         /// <param name="img"></param>
         /// <param name="format"></param>
         /// <returns></returns>
-        public static HttpResponseMessage ToHttpResponse(this Image img, ImageFormat format)
+        public static HttpResponseMessage ToHttpResponse(this Image img, ImageFormat format, Controllers.EmblemController.EmblemStatus emblemStatus)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -30,6 +31,8 @@ namespace Gw2_GuildEmblem_Cdn.Extensions
                 HttpResponseMessage result = new HttpResponseMessage(HttpStatusCode.OK);
                 result.Content = new ByteArrayContent(stream.ToArray());
                 result.Content.Headers.ContentType = new MediaTypeHeaderValue(mime);
+
+                result.Content.Headers.Add(Controllers.EmblemController.EMBLEM_STATUS_HEADER_KEY, emblemStatus.ToString());
 
                 return result;
             }

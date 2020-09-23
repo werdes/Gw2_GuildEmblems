@@ -11,8 +11,15 @@ using System.Web;
 
 namespace Gw2_GuildEmblem_Cdn.Custom.Gw2SharpWebApi.Middleware
 {
-    public class StatisticsMiddleware : Gw2Sharp.WebApi.Middleware.IWebApiMiddleware
+    public class StatisticsMiddleware : IWebApiMiddleware
     {
+        /// <summary>
+        /// Wraps Statistics gathering around requests (cached/not cached, Endpoint)
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="callNext"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<IWebApiResponse> OnRequestAsync(MiddlewareContext context, Func<MiddlewareContext, CancellationToken, Task<IWebApiResponse>> callNext, CancellationToken cancellationToken = default)
         {
             IWebApiResponse response = await callNext(context, cancellationToken);

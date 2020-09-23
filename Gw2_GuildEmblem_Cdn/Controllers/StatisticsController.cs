@@ -21,6 +21,11 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private object _lock = new object();
 
+        /// <summary>
+        /// Returns statistics for a given number of days
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
         [HttpGet]
         [AllowCrossSiteJson]
         [Route("statistics/{count}")]
@@ -48,6 +53,11 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             return null;
         }
 
+        /// <summary>
+        /// Gets containers from the statistics archive, adds them to a dictionary by day
+        /// </summary>
+        /// <param name="count"></param>
+        /// <returns></returns>
         private Dictionary<DateTime, StatisticsContainer> GetContainers(uint count)
         {
             Dictionary<DateTime, StatisticsContainer> retVal = new Dictionary<DateTime, StatisticsContainer>();

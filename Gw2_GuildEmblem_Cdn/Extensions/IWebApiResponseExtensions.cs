@@ -9,6 +9,12 @@ namespace Gw2_GuildEmblem_Cdn.Extensions
     public static class IWebApiResponseExtensions
     {
         private const string CACHE_STATE_HEADER_KEY = "X-Gw2Sharp-Cache-State";
+
+        /// <summary>
+        /// Returns the Cache State of an API response
+        /// </summary>
+        /// <param name="apiResponse"></param>
+        /// <returns></returns>
         public static CacheState GetCacheState(this IWebApiResponse apiResponse)
         {
             CacheState cacheState;

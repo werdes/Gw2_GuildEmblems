@@ -14,6 +14,13 @@ namespace Gw2_GuildEmblem_Cdn.Custom.Gw2SharpWebApi.Middleware
     {
         private static RatelimitHandler _ratelimitHandler = new RatelimitHandler(100, nameof(RateLimiterMiddleware));
 
+        /// <summary>
+        /// Wraps ratelimit handling around every request
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="callNext"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public async Task<IWebApiResponse> OnRequestAsync(MiddlewareContext context, Func<MiddlewareContext, CancellationToken, Task<IWebApiResponse>> callNext, CancellationToken cancellationToken = default)
         {
             _ratelimitHandler.Wait();

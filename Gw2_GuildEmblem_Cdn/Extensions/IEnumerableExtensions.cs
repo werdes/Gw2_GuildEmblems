@@ -26,6 +26,13 @@ namespace Gw2_GuildEmblem_Cdn.Extensions
             return false;
         }
 
+        /// <summary>
+        /// Joins a IEnumerable into a string
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="lst"></param>
+        /// <param name="separator"></param>
+        /// <returns></returns>
         public static string Join<T>(this IEnumerable<T> lst, string separator)
         {
             string[] strings = lst.Select(x => x.ToString()).ToArray();

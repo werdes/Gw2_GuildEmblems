@@ -7,5 +7,6 @@ namespace Gw2_GuildEmblem_Cdn.Custom.FlatwhiteCache
 {
     public class LogStatisticsAttribute : Attribute
     {
+        //Empty Attribute, just for presence
     }
 }

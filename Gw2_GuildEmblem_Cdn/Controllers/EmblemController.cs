@@ -28,8 +28,15 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         public const int DEFAULT_IMAGE_SIZE = 128;
         private const int MIN_IMAGE_SIZE = 1;
         private const int MAX_IMAGE_SIZE = 512;
+        public const string EMBLEM_STATUS_HEADER_KEY = "Emblem-Status";
 
         private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+
+        public enum EmblemStatus
+        {
+            OK, 
+            NotFound
+        }
 
 
         /// <summary>
@@ -119,9 +126,9 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
                 if (CacheUtility.CACHE_NAME_VALIDATOR.IsMatch(descriptor))
                 {
                     Bitmap emblem = null;
-                    if(CacheUtility.Instance.TryGetRaw(descriptor, out emblem))
+                    if (CacheUtility.Instance.TryGetRaw(descriptor, out emblem))
                     {
-                        return emblem.ToHttpResponse(ImageFormat.Png);
+                        return emblem.ToHttpResponse(ImageFormat.Png, EmblemStatus.OK);
                     }
                     else return new HttpResponseMessage(HttpStatusCode.NotFound);
                 }
@@ -144,28 +151,27 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
         {
             Bitmap retImage;
             Guild guild = await ApiUtility.Instance.GetGuild(guildId);
-           
+
             if (guild != null && guild.Emblem != null)
             {
                 //Try to find in cache first
                 if (!CacheUtility.Instance.TryGetEmblem(guild, size, out retImage))
                 {
                     (Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors) = await ApiUtility.Instance.GetEmblemInformation(guild);
-                    
+
                     retImage = await CreateEmblem(guild, emblemBackground, emblemForeground, colors, size);
 
                     CacheUtility.Instance.SetEmblem(guild, size, retImage);
                 }
 
-                return retImage.ToHttpResponse(ImageFormat.Png);
+                return retImage.ToHttpResponse(ImageFormat.Png, EmblemStatus.OK);
             }
             else
             {
                 //Return the Null Emblem
                 retImage = GetNullEmblem(size);
                 if (retImage != null)
-                    return retImage.ToHttpResponse(ImageFormat.Png);
-
+                    return retImage.ToHttpResponse(ImageFormat.Png, EmblemStatus.NotFound);
                 return new HttpResponseMessage(HttpStatusCode.InternalServerError);
             }
         }
@@ -185,7 +191,7 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
                 string path = Path.Combine(HttpContext.Current.Request.PhysicalApplicationPath, ConfigurationManager.AppSettings["null_emblem"]);
                 retImage = new Bitmap(path);
                 retImage = ImageUtility.Resize(retImage, size);
-                
+
 
                 CacheUtility.Instance.SetEmblem(null, size, retImage);
             }

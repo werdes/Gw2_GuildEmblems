@@ -8,6 +8,12 @@ namespace Gw2_GuildEmblem_Cdn.Extensions
 {
     public static class GuildEmblemExtensions
     {
+        /// <summary>
+        /// Returns a string that contains all information necessary to create an emblem
+        /// </summary>
+        /// <param name="emblem"></param>
+        /// <param name="size"></param>
+        /// <returns></returns>
         public static string ToDescriptorString(this GuildEmblem emblem, int size)
         {
             string flags = emblem.Flags.Count() > 0 ? $"_{string.Join(".", emblem.Flags.Select(x => x.Value))}" : string.Empty;

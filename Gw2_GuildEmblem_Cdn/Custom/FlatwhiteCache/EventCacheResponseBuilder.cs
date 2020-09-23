@@ -1,4 +1,5 @@
 ﻿using Flatwhite.WebApi;
+using Gw2_GuildEmblem_Cdn.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace Gw2_GuildEmblem_Cdn.Custom.FlatwhiteCache
 
         public override HttpResponseMessage GetResponse(CacheControlHeaderValue cacheControl, WebApiCacheItem cacheItem, HttpRequestMessage request)
         {
+            //Try to get the Action method called by the request to determine if Statistic Logging is activated for it
             MethodInfo actionMethod = GetRequestedAction(request);
             if (actionMethod != null && actionMethod.GetCustomAttribute<LogStatisticsAttribute>() != null)
             {
@@ -29,7 +31,15 @@ namespace Gw2_GuildEmblem_Cdn.Custom.FlatwhiteCache
                 });
             }
 
-            return base.GetResponse(cacheControl, cacheItem, request);
+
+            HttpResponseMessage response = base.GetResponse(cacheControl, cacheItem, request);
+
+            //Add the Emblem-Status header to the cached response
+            if (cacheItem.ResponseHeaders.Contains(Controllers.EmblemController.EMBLEM_STATUS_HEADER_KEY))
+                response.Headers.Add(Controllers.EmblemController.EMBLEM_STATUS_HEADER_KEY, cacheItem.ResponseHeaders.Where(x => x.Key == Controllers.EmblemController.EMBLEM_STATUS_HEADER_KEY).FirstOrDefault().Value);
+
+            return response;
+
         }
 
         /// <summary>

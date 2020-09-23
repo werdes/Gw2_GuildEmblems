@@ -33,12 +33,19 @@ namespace Gw2_GuildEmblem_Cdn.Configuration
             GlobalConfiguration.Configuration.EnsureInitialized();
         }
 
+        /// <summary>
+        /// Initializes the stat directories (create if not exist)
+        /// </summary>
         private static void InitPaths()
         {
             InitPath(CacheUtility.EMBLEM_CACHE_DIRECTORY_NAME);
             InitPath(StatisticsUtility.STATISTICS_DIRECTORY_NAME);
         }
 
+        /// <summary>
+        /// Checks if a directory exists, creates it otherwise
+        /// </summary>
+        /// <param name="dir"></param>
         private static void InitPath(string dir)
         {
             string path = Path.Combine(ConfigurationManager.AppSettings["cache_path"], dir);
@@ -48,6 +55,9 @@ namespace Gw2_GuildEmblem_Cdn.Configuration
             }
         }
 
+        /// <summary>
+        /// Configures the flatwhite cache
+        /// </summary>
         private static void InitCache()
         {
             EventCacheResponseBuilder cacheResponseBuilder = new EventCacheResponseBuilder();
@@ -62,6 +72,11 @@ namespace Gw2_GuildEmblem_Cdn.Configuration
             Global.Logger = new FlatwhiteLog4netLogger();
         }
 
+        /// <summary>
+        /// Called once a request has been served from cache
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private static void CacheResponseBuilder_OnResponse(object sender, CacheResponseEventArgs e)
         {
             StatisticsUtility.Instance.RegisterResponseAsync(e.Request, e.Cached);
