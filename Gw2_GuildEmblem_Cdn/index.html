@@ -16,185 +16,194 @@
 </head>
 <body>
     <div class="container-fluid px-5 py-5 ">
-        <div class="row">
-            <div class="col-3">
-                <div class="card bg-dark text-white text-center p-3 mb-3">
-                    <h1 class="display-4">Guild Emblem CDN</h1>
-                    <h5>Last 30 days</h5>
-                </div>
-                <div class="card">
-                    <div class="card-header">
-                        How to use
-                    </div>
-                    <div class="card-body">
-                        <h5 class="card-title">General usage</h5>
-                        <p class="card-text">
-                            You can get a default sized (128x128) emblem from <mark>https://emblem.werdes.net/emblem/{guild-id}</mark><br />
-                            <small>Example: <mark><a href="https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C">https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C</a></mark></small>
-                        </p>
-                        <h5 class="card-title">Sizes</h5>
-                        <p class="card-text">
-                            You can resize the emblem by adding the size as an additonal parameter behind the guild-id.<br />
-                            <small>Note: Minimum size is 1x1, maximum size is 512x512</small><br />
-                            <small>Example: <mark><a href="https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C/64">https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C/64</a></mark> will result in a 64x64 version of that emblem.</small>
-                            <div class="alert alert-warning p-1" role="alert">
-                                <small>Note: Due to the API delivering <strong>128x128</strong> images, anything above that will be upscaled and probably look ugly.</small>
+        <div class="card-columns">
+            <div class="card bg-dark text-white text-center p-3 mb-3">
+                <h1 class="display-4">Guild Emblem CDN</h1>
+                <h5>Last 30 days</h5>
+            </div>
+            <div class="card bg-success text-white text-center p-3" id="card-total">
+                <div class="card-body">
+                    <div class="chart-container" id="chart-total">
+                        <div class="text-center p-1">
+                            <div class="spinner-border text-white" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
                             </div>
-                        </p>
-                        <h5 class="card-title">Caching</h5>
-                        <p class="card-text">Individual emblems are cached for <strong>24 hours</strong> to reduce API calls.</p>
-                        <p class="card-text"></p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col">
-                <div class="card-columns">
-                    <div class="card bg-success text-white text-center p-3" id="card-total">
-                        <div class="card-body">
-                            <div class="chart-container" id="chart-total">
-                                <div class="text-center p-1">
-                                    <div class="spinner-border text-white" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
+            <div class="card bg-primary text-white text-center p-3" id="card-emblemcount">
+                <div class="card-body">
+                    <div class="chart-container" id="chart-emblemcount">
+                        <div class="text-center p-1">
+                            <div class="spinner-border text-white" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
                             </div>
                         </div>
                     </div>
-                    <div class="card" id="card-sizes">
-                        <div class="card-body">
-                            <h5 class="card-title">Sizes</h5>
-                            <div class="chart-container" id="chart-sizes">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-body" id="card-caching">
-                            <h5 class="card-title">Caching</h5>
-                            <div class="chart-container" id="chart-caching-daily">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <div class="card-body" id="card-caching-pie">
-                            <h5 class="card-title">Caching</h5>
-                            <div class="chart-container" id="chart-caching-pie">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" id="card-top-guilds">
-                        <div class="card-body">
-                            <h5 class="card-title">Top Guilds</h5>
-                            <div class="chart-container" id="chart-top-guilds">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" id="card-top-emblems">
-                        <div class="card-body">
-                            <h5 class="card-title">Most requested emblems</h5>
-                            <div class="chart-container" id="chart-top-emblems">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" id="card-top-referrers">
-                        <div class="card-body">
-                            <h5 class="card-title">Top referrers</h5>
-                            <div class="chart-container" id="chart-top-referrers">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" id="card-ratelimit-exceedances">
-                        <div class="card-body">
-                            <h5 class="card-title">Ratelimit exceedances</h5>
-                            <div class="chart-container" id="chart-ratelimit-exceedances">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" id="card-api-endpoint-caching">
-                        <div class="card-body">
-                            <h5 class="card-title">API endpoint caching</h5>
-                            <div class="chart-container" id="chart-api-endpoint-caching">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card" id="card-api-endpoints-total">
-                        <div class="card-body">
-                            <h5 class="card-title">API calls by endpoint</h5>
-                            <div class="chart-container" id="chart-api-endpoints-total">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card bg-dark text-white" id="card-footer">
-                        <div class="card-body">
-                            <p class="card-text">
-                                <small>
-                                    NCSOFT, the interlocking NC logo, ArenaNet, Guild Wars, Guild Wars Factions, Guild Wars Nightfall, Guild
-                                    Wars: Eye of the
-                                    North, Guild Wars 2, and all associated logos and designs are trademarks or registered trademarks of NCSOFT
-                                    Corporation.
-                                    All other trademarks are the property of their respective owners.
-                                </small>
-                            </p>
-                        </div>
-                    </div>
-                    <!--<div class="card" id="card-">
-                        <div class="card-body">
-                            <h5 class="card-title">Example Statistic</h5>
-                            <div class="chart-container" id="chart-">
-                                <div class="text-center p-5">
-                                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
-                                        <span class="sr-only">Loading</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>-->
                 </div>
             </div>
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    How to use
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">General usage</h5>
+                    <p class="card-text">
+                        You can get a default sized (128x128) emblem from <mark>https://emblem.werdes.net/emblem/{guild-id}</mark><br />
+                        Requesting an emblem for a non-existing guild or a guild without an emblem will result in a default image (<a href="emblem/raw/null_128">Example</a>) and a "NotFound"-Information in Headers (see "Headers") <br />
+                        <small>Example: <mark><a href="https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C">https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C</a></mark></small>
+                    </p>
+                    <h5 class="card-title">Sizes</h5>
+                    <p class="card-text">
+                        You can resize the emblem by adding the size as an additonal parameter behind the guild-id.<br />
+                        <small>Note: Minimum size is 1x1, maximum size is 512x512</small><br />
+                        <small>Example: <mark><a href="https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C/64">https://emblem.werdes.net/emblem/0442B0AE-23BF-E711-81A1-020CAB02238C/64</a></mark> will result in a 64x64 version of that emblem.</small>
+                        <div class="alert alert-warning p-1" role="alert">
+                            <small>Note: Due to the API delivering <strong>128x128</strong> images, anything above that will be upscaled and probably look ugly.</small>
+                        </div>
+                    </p>
+                    <h5 class="card-title">Caching</h5>
+                    <p class="card-text">Individual emblems are cached for <strong>24 hours</strong> to reduce API calls.</p>
+
+                    <h5 class="card-title">Headers</h5>
+                    <p class="card-text">The Response (if successfully served) will contain a <mark>Emblem-Status</mark> header that will tell you wether the emblem is <mark>OK</mark> or <mark>NotFound</mark>.</p>
+                    <p class="card-text"></p>
+                </div>
+            </div>
+            <div class="card" id="card-sizes">
+                <div class="card-body">
+                    <h5 class="card-title">Sizes</h5>
+                    <div class="chart-container" id="chart-sizes">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body" id="card-caching">
+                    <h5 class="card-title">Caching</h5>
+                    <div class="chart-container" id="chart-caching-daily">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body" id="card-caching-pie">
+                    <h5 class="card-title">Caching</h5>
+                    <div class="chart-container" id="chart-caching-pie">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="card-top-guilds">
+                <div class="card-body">
+                    <h5 class="card-title">Top Guilds</h5>
+                    <div class="chart-container" id="chart-top-guilds">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="card-top-emblems">
+                <div class="card-body">
+                    <h5 class="card-title">Most requested emblems</h5>
+                    <div class="chart-container" id="chart-top-emblems">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="card-top-referrers">
+                <div class="card-body">
+                    <h5 class="card-title">Top referrers</h5>
+                    <div class="chart-container" id="chart-top-referrers">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="card-ratelimit-exceedances">
+                <div class="card-body">
+                    <h5 class="card-title">Ratelimit exceedances</h5>
+                    <div class="chart-container" id="chart-ratelimit-exceedances">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="card-api-endpoint-caching">
+                <div class="card-body">
+                    <h5 class="card-title">API endpoint caching</h5>
+                    <div class="chart-container" id="chart-api-endpoint-caching">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="card-api-endpoints-total">
+                <div class="card-body">
+                    <h5 class="card-title">API calls by endpoint</h5>
+                    <div class="chart-container" id="chart-api-endpoints-total">
+                        <div class="text-center p-5">
+                            <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-dark text-white" id="card-footer">
+                <div class="card-body">
+                    <p class="card-text">
+                        <small>
+                            NCSOFT, the interlocking NC logo, ArenaNet, Guild Wars, Guild Wars Factions, Guild Wars Nightfall, Guild
+                            Wars: Eye of the
+                            North, Guild Wars 2, and all associated logos and designs are trademarks or registered trademarks of NCSOFT
+                            Corporation.
+                            All other trademarks are the property of their respective owners.
+                        </small>
+                    </p>
+                </div>
+            </div>
+            <!--<div class="card" id="card-">
+        <div class="card-body">
+            <h5 class="card-title">Example Statistic</h5>
+            <div class="chart-container" id="chart-">
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                        <span class="sr-only">Loading</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>-->
         </div>
     </div>
 
@@ -221,8 +230,25 @@
         });
 
         $(function () {
+            getStats();
+            getCountEmblems();
+        });
+
+
+        function getCountEmblems() {
             $.ajax({
-                url: "https://emblem.werdes.net/statistics/30",
+                url: "statistics/created_emblems",
+                cache: false,
+                complete: function (response) {
+                    var data = parseInt(response.responseText);
+                    setEmblemcount(data);
+                }
+            });
+        }
+
+        function getStats() {
+            $.ajax({
+                url: "statistics/30",
                 cache: false,
                 dataType: "json",
                 complete: function (response) {
@@ -239,7 +265,11 @@
                     setApiEndpointsTotal(data.api_endpoints_total);
                 }
             });
-        });
+        }
+        
+        function setEmblemcount(emblemCount) {
+            $('#chart-emblemcount').html('<h1>' + emblemCount.toThousandSeparator() + '</h1><h3>different emblems created and cached</h3>');
+        }
 
         function setSizes(sizes) {
 
@@ -539,7 +569,7 @@
 
         function setTotal(total_requests_served, days) {
             var total = total_requests_served.FromCache + total_requests_served.FromLive;
-            $('#chart-total').html('<h1>' + total.toThousandSeparator() + '</h1><h3>Emblems served within the last ' + days + ' days</h3>');
+            $('#chart-total').html('<h1>' + total.toThousandSeparator() + '</h1><h3>emblems served within the last ' + days + ' days</h3>');
         }
 
         function setCaching(cache_servings) {

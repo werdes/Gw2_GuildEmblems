@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 using Gw2_GuildEmblem_Cdn.Extensions;
+using System.Threading.Tasks;
 
 namespace Gw2_GuildEmblem_Cdn.Utility
 {
@@ -35,10 +36,13 @@ namespace Gw2_GuildEmblem_Cdn.Utility
         /// Returns the amount of created Emblems
         /// </summary>
         /// <returns></returns>
-        public int GetCountEmblemsInCache()
+        public async Task<int> GetCountEmblemsInCache()
         {
-            DirectoryInfo directory = new DirectoryInfo(Path.Combine(ConfigurationManager.AppSettings["cache_path"], EMBLEM_CACHE_DIRECTORY_NAME));
-            return directory.GetFiles().Length;
+            return await Task.Run(delegate
+            {
+                DirectoryInfo directory = new DirectoryInfo(Path.Combine(ConfigurationManager.AppSettings["cache_path"], EMBLEM_CACHE_DIRECTORY_NAME));
+                return directory.GetFiles().Length;
+            });
         }
 
         /// <summary>

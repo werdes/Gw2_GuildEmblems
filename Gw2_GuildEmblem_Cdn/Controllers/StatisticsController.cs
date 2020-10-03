@@ -53,6 +53,25 @@ namespace Gw2_GuildEmblem_Cdn.Controllers
             return null;
         }
 
+
+        /// <summary>
+        /// Returns the amount of created emblems in cache
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [AllowCrossSiteJson]
+        [Route("statistics/created_emblems")]
+        [OutputCache(
+            MaxAge = 60 /*Seconds*/ * 60 /*Minutes*/, // 60 Minutes
+            StaleWhileRevalidate = 5,
+            IgnoreRevalidationRequest = true,
+            VaryByParam = "*")]
+        public async Task<int> GetCountCreatedEmblems()
+        {
+            return await CacheUtility.Instance.GetCountEmblemsInCache();
+        }
+
+
         /// <summary>
         /// Gets containers from the statistics archive, adds them to a dictionary by day
         /// </summary>
