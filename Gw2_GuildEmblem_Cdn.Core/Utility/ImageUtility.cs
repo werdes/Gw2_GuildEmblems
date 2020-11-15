@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using SkiaSharp;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 
@@ -6,24 +7,35 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
 {
     public class ImageUtility
     {
+        public enum RotateFlipType
+        {
+            FlipX,
+            FlipY
+        }
+
         /// <summary>
         /// shades an image in a certain color defined by the images alpha values
         /// </summary>
         /// <param name="image"></param>
         /// <param name="color"></param>
         /// <returns></returns>
-        public static Bitmap ShadeImageFromAlpha(Bitmap image, Color color)
+        public static SKBitmap ShadeImageFromAlpha(SKBitmap image, SKColor color)
         {
-            Bitmap retImage = new Bitmap(image.Width, image.Height);
+            SKBitmap retImage = new SKBitmap(image.Width, image.Height);
             for (int x = 0; x < image.Width; x++)
                 for (int y = 0; y < image.Height; y++)
                 {
-                    byte alpha = image.GetPixel(x, y).A;
-                    Color newColor = Color.FromArgb(alpha, color);
+                    byte alpha = image.GetPixel(x, y).Alpha;
+                    SKColor newColor = new SKColor(color.Red, color.Green, color.Blue, alpha);
                     retImage.SetPixel(x, y, newColor);
                 }
 
             return retImage;
+        }
+
+        public static SKBitmap GetSKBitmap(byte[] image)
+        {
+            return SKBitmap.Decode(image);
         }
 
         /// <summary>
@@ -31,18 +43,20 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// </summary>
         /// <param name="images"></param>
         /// <returns></returns>
-        public static Bitmap LayerImages(IEnumerable<Bitmap> images)
+        public static SKBitmap LayerImages(IEnumerable<SKBitmap> images, int size)
         {
-            Bitmap retImage = new Bitmap(images.First().Width, images.First().Height);
-            using (var g = Graphics.FromImage(retImage))
+            using (SKSurface surface = SKSurface.Create(new SKImageInfo(size, size)))
             {
-                foreach (Image image in images)
-                {
-                    g.DrawImage(image, 0, 0);
-                }
-            }
+                SKCanvas canvas = surface.Canvas;
+                canvas.Clear(SKColors.Transparent);
 
-            return retImage;
+                foreach (SKBitmap image in images)
+                {
+                    canvas.DrawBitmap(image, SKRect.Create(0, 0, size, size));
+                }
+
+                return SKBitmap.FromImage(surface.Snapshot());
+            }
         }
 
         /// <summary>
@@ -51,14 +65,38 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// <param name="image"></param>
         /// <param name="rotations"></param>
         /// <returns></returns>
-        public static Bitmap ApplyRotations(Bitmap image, IEnumerable<RotateFlipType> rotations)
+        public static SKBitmap ApplyRotations(SKBitmap image, IEnumerable<RotateFlipType> rotations)
         {
+
             foreach (RotateFlipType rotation in rotations)
             {
-                image.RotateFlip(rotation);
+                image = FlipImage(image, rotation);
             }
 
             return image;
+        }
+
+        private static SKBitmap FlipImage(SKBitmap image, RotateFlipType rotation)
+        {
+            SKSurface rotated = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
+
+            using (SKCanvas canvas = rotated.Canvas)
+            {
+                switch (rotation)
+                {
+                    case RotateFlipType.FlipX:
+                        canvas.Scale(-1, 1);
+                        canvas.Translate(-image.Width, 0);
+                        break;
+                    case RotateFlipType.FlipY:
+                        canvas.Scale(1, -1);
+                        canvas.Translate(0, -image.Height);
+                        break;
+                }
+                canvas.DrawBitmap(image, 0, 0);
+            }
+
+            return SKBitmap.FromImage(rotated.Snapshot());
         }
 
         /// <summary>
@@ -67,9 +105,9 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// <param name="image"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public static Bitmap Resize(Bitmap image, int size)
+        public static SKBitmap Resize(SKBitmap image, int size)
         {
-            return new Bitmap(image, size, size);
+            return image.Resize(new SKImageInfo(size, size), SKFilterQuality.High);
         }
     }
 }

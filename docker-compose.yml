@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  gw2_guildemblem_cdn.core:
+    image: ${DOCKER_REGISTRY-}gw2guildemblemcdncore
+    build:
+      context: .
+      dockerfile: Gw2_GuildEmblem_Cdn.Core/Dockerfile
+    ports:
+      - 5000:5000  

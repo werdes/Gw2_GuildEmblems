@@ -9,7 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gw2_GuildEmblem_Cdn.Test", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Flatwhite.WebApi", "..\Flatwhite\Flatwhite.WebApi\Flatwhite.WebApi.csproj", "{31CDF9B3-0801-484B-A915-03CC8C81EC5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gw2_GuildEmblem_Cdn.Core", "Gw2_GuildEmblem_Cdn.Core\Gw2_GuildEmblem_Cdn.Core.csproj", "{DE3C3D1D-70CC-4D3E-8995-05259EF33B5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gw2_GuildEmblem_Cdn.Core", "Gw2_GuildEmblem_Cdn.Core\Gw2_GuildEmblem_Cdn.Core.csproj", "{DE3C3D1D-70CC-4D3E-8995-05259EF33B5F}"
+EndProject
+Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{3C71506B-EDE0-4709-B79B-C263A15E395B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{DE3C3D1D-70CC-4D3E-8995-05259EF33B5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE3C3D1D-70CC-4D3E-8995-05259EF33B5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE3C3D1D-70CC-4D3E-8995-05259EF33B5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C71506B-EDE0-4709-B79B-C263A15E395B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C71506B-EDE0-4709-B79B-C263A15E395B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C71506B-EDE0-4709-B79B-C263A15E395B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C71506B-EDE0-4709-B79B-C263A15E395B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

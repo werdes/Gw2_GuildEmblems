@@ -126,14 +126,10 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        public async Task<System.Drawing.Image> GetImage(RenderUrl url)
+        public async Task<byte[]> GetImage(RenderUrl url)
         {
             byte[] buffer = await _archiveCachedClient.WebApi.Render.DownloadToByteArrayAsync(url.Url);
-
-            using (Stream stream = new MemoryStream(buffer))
-            {
-                return System.Drawing.Image.FromStream(stream);
-            }
+            return buffer;
         }
 
 

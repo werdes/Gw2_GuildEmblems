@@ -2,7 +2,9 @@
 using Gw2_GuildEmblem_Cdn.Core.Utility.Interfaces;
 using Gw2Sharp.WebApi.V2.Models;
 using Microsoft.Extensions.Configuration;
+using SkiaSharp;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -46,7 +48,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// <param name="size"></param>
         /// <param name="retVal"></param>
         /// <returns></returns>
-        public bool TryGetEmblem(Guild guild, int size, out Bitmap retVal)
+        public bool TryGetEmblem(Guild guild, int size, out SKBitmap retVal)
         {
             string descriptor = GetEmblemDescriptor(guild, size);
             string filePath = Path.Combine(_config["cachePath"], EMBLEM_CACHE_DIRECTORY_NAME, descriptor + EMBLEM_CACHE_EXTENSION);
@@ -55,12 +57,12 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
 
             if (System.IO.File.Exists(filePath))
             {
-                retVal = new Bitmap(filePath);
+                retVal =  SKBitmap.Decode(filePath);
                 return true;
             }
             else
             {
-                retVal = new Bitmap(128, 128);
+                retVal = new SKBitmap(128, 128);
                 return false;
             }
         }
@@ -71,12 +73,12 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// <param name="descriptor"></param>
         /// <param name="retVal"></param>
         /// <returns></returns>
-        public bool TryGetRaw(string descriptor, out Bitmap retVal)
+        public bool TryGetRaw(string descriptor, out SKBitmap retVal)
         {
             string filePath = Path.Combine(_config["cachePath"], EMBLEM_CACHE_DIRECTORY_NAME, descriptor + EMBLEM_CACHE_EXTENSION);
             if (System.IO.File.Exists(filePath))
             {
-                retVal = new Bitmap(filePath);
+                retVal = SKBitmap.Decode(filePath);
                 return true;
             }
             else
@@ -93,11 +95,19 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// <param name="guild"></param>
         /// <param name="size"></param>
         /// <param name="image"></param>
-        public void SetEmblem(Guild guild, int size, Bitmap image)
+        public void SetEmblem(Guild guild, int size, SKBitmap image)
         {
             string descriptor = GetEmblemDescriptor(guild, size);
             string filePath = Path.Combine(_config["cachePath"], EMBLEM_CACHE_DIRECTORY_NAME, descriptor + EMBLEM_CACHE_EXTENSION);
-            image.Save(filePath);
+
+            using(SKData data = image.Encode(SKEncodedImageFormat.Png, 95))
+            {
+                using(FileStream stream = System.IO.File.OpenWrite(filePath))
+                {
+                    data.SaveTo(stream);
+                    stream.Close();
+                }
+            }
         }
 
         /// <summary>
@@ -106,7 +116,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// <param name="guild"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        private string GetEmblemDescriptor(Guild guild, int size)
+        public string GetEmblemDescriptor(Guild guild, int size)
         {
             if (guild != null && guild.Emblem != null)
             {

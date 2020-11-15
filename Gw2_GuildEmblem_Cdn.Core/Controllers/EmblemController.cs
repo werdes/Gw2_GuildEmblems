@@ -6,18 +6,15 @@ using Gw2_GuildEmblem_Cdn.Core.Utility.Interfaces;
 using Gw2Sharp.WebApi;
 using Gw2Sharp.WebApi.V2.Models;
 using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using SkiaSharp;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.Linq;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
+using static Gw2_GuildEmblem_Cdn.Core.Utility.ImageUtility;
 
 namespace Gw2_GuildEmblem_Cdn.Core.Controllers
 {
@@ -27,6 +24,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         private const int MIN_IMAGE_SIZE = 1;
         private const int MAX_IMAGE_SIZE = 512;
         public const string EMBLEM_STATUS_HEADER_KEY = "Emblem-Status";
+        public const string EMBLEM_DESCRIPTOR_HEADER_KEY = "Emblem-Descriptor";
 
         private readonly ILogger _log = Log.Factory.CreateLogger<EmblemController>();
         private readonly IConfiguration _config;
@@ -85,9 +83,9 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// <param name="guildId"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        [System.Web.Http.HttpGet]
+        [HttpGet]
         [EnableCors(Startup.AllowSpecificOriginsName)]
-        [System.Web.Http.Route("emblem/{guildId}/{size}")]
+        [Route("emblem/{guildId}/{size}")]
         [ResponseCache(Duration = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/)]
         [LogStatistics]
         public async Task<IActionResult> GetResized(string guildId, int size)
@@ -119,26 +117,26 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         [EnableCors(Startup.AllowSpecificOriginsName)]
         [Route("emblem/raw/{descriptor}")]
         [ResponseCache(Duration = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/)]
-        public HttpResponseMessage GetRaw(string descriptor)
+        public async Task<IActionResult> GetRaw(string descriptor)
         {
             try
             {
                 if (EmblemCacheUtility.CACHE_NAME_VALIDATOR.IsMatch(descriptor))
                 {
-                    Bitmap emblem = null;
+                    SKBitmap emblem = null;
                     if (_cache.TryGetRaw(descriptor, out emblem))
                     {
-                        return emblem.ToHttpResponse(ImageFormat.Png, EmblemStatus.OK);
+                        return emblem.ToActionResult(this, SKEncodedImageFormat.Png, EmblemStatus.OK, descriptor);
                     }
-                    else return new HttpResponseMessage(HttpStatusCode.NotFound);
+                    else return StatusCode(404);
                 }
-                else return new HttpResponseMessage(HttpStatusCode.NotFound);
+                else return StatusCode(404);
             }
             catch (Exception ex)
             {
                 _log.LogError(ex, descriptor);
             }
-            return new HttpResponseMessage(HttpStatusCode.InternalServerError);
+            return StatusCode(500);
         }
 
         /// <summary>
@@ -149,7 +147,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// <returns></returns>
         private async Task<IActionResult> GetInternal(string guildId, int size)
         {
-            Bitmap retImage;
+            SKBitmap retImage;
             Guild guild = await _api.GetGuild(guildId);
 
             if (guild != null && guild.Emblem != null)
@@ -164,14 +162,18 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
                     _cache.SetEmblem(guild, size, retImage);
                 }
 
-                return retImage.ToActionResult(this, ImageFormat.Png, EmblemStatus.OK);
+                string descriptor = _cache.GetEmblemDescriptor(guild, size);
+                return retImage.ToActionResult(this, SKEncodedImageFormat.Png, EmblemStatus.OK, descriptor);
             }
             else
             {
                 //Return the Null Emblem
                 retImage = GetNullEmblem(size);
                 if (retImage != null)
-                    return retImage.ToActionResult(this, ImageFormat.Png, EmblemStatus.NotFound);
+                {
+                    string descriptor = _cache.GetEmblemDescriptor(null, size);
+                    return retImage.ToActionResult(this, SKEncodedImageFormat.Png, EmblemStatus.NotFound, descriptor);
+                }
 
                 return StatusCode(500);
             }
@@ -183,14 +185,14 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// </summary>
         /// <param name="size"></param>
         /// <returns></returns>
-        private Bitmap GetNullEmblem(int size)
+        private SKBitmap GetNullEmblem(int size)
         {
-            Bitmap retImage = null;
+            SKBitmap retImage = null;
 
             if (!_cache.TryGetEmblem(null, size, out retImage))
             {
                 string path = _config["nullEmblem"];
-                retImage = new Bitmap(path);
+                retImage = SKBitmap.Decode(path);
                 retImage = ImageUtility.Resize(retImage, size);
 
 
@@ -209,13 +211,13 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// <param name="colors"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        private async Task<Bitmap> CreateEmblem(Guild guild, Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors, int size)
+        private async Task<SKBitmap> CreateEmblem(Guild guild, Emblem emblemBackground, Emblem emblemForeground, List<Color> colors, int size)
         {
             //Layer back- and foreground
             RenderUrl[] backgrounds = emblemBackground.Layers.ToArray();
             RenderUrl[] foregrounds = emblemForeground.Layers.Skip(1).Select(x => x).ToArray(); //First image in foreground layers is not used - it's some weird red version 
 
-            List<(RenderUrl, System.Drawing.Color, List<RotateFlipType>)> lstLayers = new List<(RenderUrl, System.Drawing.Color, List<RotateFlipType>)>();
+            List<(RenderUrl, SKColor, List<RotateFlipType>)> lstLayers = new List<(RenderUrl, SKColor, List<RotateFlipType>)>();
 
             //Put together background-images with url, color and rotation instructions
             for (int i = 0; i < backgrounds.Length; i++)
@@ -224,16 +226,16 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
 
                 if (guild.Emblem.Background.Colors.TryGet(i, out colorId))
                 {
-                    Gw2Sharp.WebApi.V2.Models.Color color = colors.Where(x => x.Id == colorId).FirstOrDefault();
+                    Color color = colors.Where(x => x.Id == colorId).FirstOrDefault();
                     List<RotateFlipType> flipTypes = new List<RotateFlipType>();
                     if (color != null)
                     {
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipBackgroundHorizontal))
-                            flipTypes.Add(RotateFlipType.RotateNoneFlipX);
+                            flipTypes.Add(RotateFlipType.FlipX);
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipBackgroundVertical))
-                            flipTypes.Add(RotateFlipType.RotateNoneFlipY);
+                            flipTypes.Add(RotateFlipType.FlipY);
 
-                        lstLayers.Add((backgrounds[i], System.Drawing.Color.FromArgb(color.Cloth.Rgb[0], color.Cloth.Rgb[1], color.Cloth.Rgb[2]), flipTypes));
+                        lstLayers.Add((backgrounds[i], new SKColor((byte)color.Cloth.Rgb[0], (byte)color.Cloth.Rgb[1], (byte)color.Cloth.Rgb[2]), flipTypes));
                     }
                 }
             }
@@ -252,11 +254,11 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
                     {
                         List<RotateFlipType> transformations = new List<RotateFlipType>();
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipForegroundHorizontal))
-                            transformations.Add(RotateFlipType.RotateNoneFlipX);
+                            transformations.Add(RotateFlipType.FlipX);
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipForegroundVertical))
-                            transformations.Add(RotateFlipType.RotateNoneFlipY);
+                            transformations.Add(RotateFlipType.FlipY);
 
-                        lstLayers.Add((foregrounds[i], System.Drawing.Color.FromArgb(color.Cloth.Rgb[0], color.Cloth.Rgb[1], color.Cloth.Rgb[2]), transformations));
+                        lstLayers.Add((foregrounds[i], new SKColor((byte)color.Cloth.Rgb[0], (byte)color.Cloth.Rgb[1], (byte)color.Cloth.Rgb[2]), transformations));
                     }
                 }
             }
@@ -265,16 +267,16 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
             // 2.) Shade according to color
             // 3.) Apply Rotations/Flips
             // 4.) Resize if necessary
-            List<Bitmap> layers = new List<Bitmap>();
-            foreach ((RenderUrl url, System.Drawing.Color shadeColor, List<RotateFlipType> transformations) in lstLayers)
+            List<SKBitmap> layers = new List<SKBitmap>();
+            foreach ((RenderUrl url, SKColor shadeColor, List<RotateFlipType> transformations) in lstLayers)
             {
-                Bitmap layer =
-                    ImageUtility.ApplyRotations(
-                        ImageUtility.ShadeImageFromAlpha(
-                            (Bitmap)await _api.GetImage(url),
-                        shadeColor),
-                    transformations);
-
+                SKBitmap layer =
+                        ImageUtility.ApplyRotations(
+                            ImageUtility.ShadeImageFromAlpha(
+                                ImageUtility.GetSKBitmap(await _api.GetImage(url)),
+                            shadeColor),
+                        transformations);
+                
                 if (size != DEFAULT_IMAGE_SIZE)
                 {
                     layer = ImageUtility.Resize(layer, size);
@@ -287,7 +289,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
             _statistics.RegisterCreationAsync(guild, size);
 
             //Merge layers
-            Bitmap retImage = ImageUtility.LayerImages(layers);
+            SKBitmap retImage = ImageUtility.LayerImages(layers, size);
             return retImage;
         }
     }
