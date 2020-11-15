@@ -1,7 +1,5 @@
 using Gw2_GuildEmblem_Cdn.Utility;
-using System;
 using System.IO;
-using System.Text.RegularExpressions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -21,7 +19,7 @@ namespace Gw2_GuildEmblem_Cdn.Test
         {
             string[] names = File.ReadAllLines(@"Resources\emblems.txt");
 
-            foreach(string name in names)
+            foreach (string name in names)
             {
                 _output.WriteLine(name);
                 Assert.Matches(CacheUtility.CACHE_NAME_VALIDATOR, name);

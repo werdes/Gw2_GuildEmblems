@@ -354,3 +354,5 @@ Gw2_GuildEmblem_Cdn/Web.Debug.config
 Gw2_GuildEmblem_Cdn/Web.Release.config
 
 nuget/
+
+Gw2_GuildEmblem_Cdn/
