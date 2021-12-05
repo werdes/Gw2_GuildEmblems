@@ -20,7 +20,6 @@ namespace Gw2_GuildEmblem_Cdn.Core.Extensions
                     data.SaveTo(stream);
                     stream.Close();
 
-                    ImageCodecInfo[] codecs = ImageCodecInfo.GetImageEncoders();
                     string mime = format.GetMime();
 
                     byte[] buffer = stream.ToArray();

@@ -4,10 +4,10 @@ FROM mcr.microsoft.com/dotnet/aspnet:5.0-buster-slim AS base
 WORKDIR /app
 EXPOSE 80
 
-RUN mkdir -p /var/gw2-guildemblem-cdn-core/cache/emblem/
-RUN mkdir -p /var/gw2-guildemblem-cdn-core/cache/stat/
-RUN mkdir -p /var/gw2-guildemblem-cdn-core/log/
-RUN apt-get update && apt-get install -y libgdiplus
+RUN mkdir -p /var/gw2-guildemblem-cdn/cache/
+RUN mkdir -p /var/gw2-guildemblem-cdn/cache/emblem/
+RUN mkdir -p /var/gw2-guildemblem-cdn/cache/stat/
+RUN mkdir -p /var/gw2-guildemblem-cdn/log/
 
 FROM mcr.microsoft.com/dotnet/sdk:5.0-buster-slim AS build
 WORKDIR /src

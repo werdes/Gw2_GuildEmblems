@@ -7,10 +7,11 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
 {
     public class ImageUtility
     {
-        public enum RotateFlipType
+        public enum ImageManipulation
         {
             FlipX,
-            FlipY
+            FlipY,
+            MaximizeAlpha
         }
 
         /// <summary>
@@ -63,20 +64,46 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         /// Applies a set of rotations to an image
         /// </summary>
         /// <param name="image"></param>
-        /// <param name="rotations"></param>
+        /// <param name="manipulations"></param>
         /// <returns></returns>
-        public static SKBitmap ApplyRotations(SKBitmap image, IEnumerable<RotateFlipType> rotations)
+        public static SKBitmap ApplyManipulations(SKBitmap image, IEnumerable<ImageManipulation> manipulations)
         {
 
-            foreach (RotateFlipType rotation in rotations)
+            foreach (ImageManipulation manipulation in manipulations)
             {
-                image = FlipImage(image, rotation);
+                if (manipulation == ImageManipulation.FlipX ||
+                   manipulation == ImageManipulation.FlipY)
+                {
+                    image = ApplyRotation(image, manipulation);
+                }
+                else if(manipulation == ImageManipulation.MaximizeAlpha)
+                {
+                    image = MaximizeAlpha(image);
+                }
             }
 
             return image;
         }
 
-        private static SKBitmap FlipImage(SKBitmap image, RotateFlipType rotation)
+        private static SKBitmap MaximizeAlpha(SKBitmap image)
+        {
+            byte maxAlpha = image.Pixels.Max(x => x.Alpha);
+            double factor = 1D / ((double)maxAlpha / byte.MaxValue);
+
+            for (int x = 0; x < image.Width; x++) 
+            { 
+                for (int y = 0; y < image.Height; y++)
+                {
+                    byte alpha = (byte) (image.GetPixel(x, y).Alpha * factor);
+                    SKColor newColor = image.GetPixel(x, y).WithAlpha(alpha);
+
+                    image.SetPixel(x, y, newColor);
+                }
+            }
+            return image;
+        }
+
+        private static SKBitmap ApplyRotation(SKBitmap image, ImageManipulation rotation)
         {
             SKSurface rotated = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
 
@@ -84,13 +111,16 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             {
                 switch (rotation)
                 {
-                    case RotateFlipType.FlipX:
+                    case ImageManipulation.FlipX:
                         canvas.Scale(-1, 1);
                         canvas.Translate(-image.Width, 0);
                         break;
-                    case RotateFlipType.FlipY:
+                    case ImageManipulation.FlipY:
                         canvas.Scale(1, -1);
                         canvas.Translate(0, -image.Height);
+                        break;
+                    case ImageManipulation.MaximizeAlpha:
+
                         break;
                 }
                 canvas.DrawBitmap(image, 0, 0);

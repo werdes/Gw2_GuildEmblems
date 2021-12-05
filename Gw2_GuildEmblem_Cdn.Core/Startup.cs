@@ -7,20 +7,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 
 namespace Gw2_GuildEmblem_Cdn.Core
 {
     public class Startup
     {
-        private static readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         public const string AllowSpecificOriginsName = "Default";
         public IConfiguration Configuration { get; }
 
 
         public Startup(IConfiguration configuration)
         {
-            _log.Info("start");
             Configuration = configuration;
         }
 
@@ -53,6 +52,7 @@ namespace Gw2_GuildEmblem_Cdn.Core
             {
                 app.UseDeveloperExceptionPage();
             }
+
 
             app.UseRouting();
             app.UseAuthorization();

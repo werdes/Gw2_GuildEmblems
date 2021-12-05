@@ -9,17 +9,46 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
 
     <style type="text/css">
-        h1.display-4 {
+        h1#page-title {
             font-size: 2.6em !important;
+            margin-bottom: 0px !important;
+        }
+        #guild-search-details span.input-group-text {
+            width: 100px;
+            text-align: right !important;
         }
     </style>
 </head>
 <body>
     <div class="container-fluid px-5 py-5 ">
         <div class="card-columns">
-            <div class="card bg-dark text-white text-center p-3 mb-3">
-                <h1 class="display-4">Guild Emblem CDN</h1>
-                <h5>Last 30 days</h5>
+            <div class="card bg-dark text-white text-center">
+                <h1 id="page-title" class="display-4 p-3 mb-3">Guild Emblem CDN</h1>
+
+                <input type="text" class="form-control bg-dark text-white border-secondary border-bottom-0 border-left-0 border-right-0 rounded-0" id="guild-search" placeholder="Search for a guild" />
+
+                <div class="spinner-border text-light p-3 mb-3 d-none" id="guild-search-loading-indicator" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="sr-only">Loading</span>
+                </div>
+
+                <div class="media d-none m-3" id="guild-search-details">
+                    <img class="align-self-start mr-3" id="guild-search-details-emblem" width="64" height="64"/>
+                    <div class="media-body">
+                        <h5 class="mt-0 text-left" id="guild-search-details-title"></h5>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">128x128</span>
+                            </div>
+                            <input type="text" class="form-control" id="guild-search-details-emblem-128">
+                        </div>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">64x64</span>
+                            </div>
+                            <input type="text" class="form-control" id="guild-search-details-emblem-64">
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="card bg-success text-white text-center p-3" id="card-total">
                 <div class="card-body">
@@ -63,6 +92,22 @@
                             <small>Note: Due to the API delivering <strong>128x128</strong> images, anything above that will be upscaled and probably look ugly.</small>
                         </div>
                     </p>
+                    <h5 class="card-title">Options</h5>
+                    <p class="card-text">You can manipulate the emblem in certain ways by adding the <mark>?options=</mark> parameter at the end. 
+                    <br />
+                    <b>MaximizeAlpha</b><br />
+                    Theres currently <mark>BackgroundMaximizeAlpha</mark> and <mark>ForegroundMaximizeAlpha</mark> available, which will scale the alpha of the corresponding part of the emblem up to 1 so it looks less washed on light backgrounds. You can combine options by seperating them with a comma (,). Compare the background of the following two emblems: <br />
+                    <div class="row">
+                        <div class="col-md-6">
+                            <img src="emblem/raw/28-473_255-71.4_FlipBackgroundHorizontal_128" />
+                        </div>
+                        <div class="col-md-6">
+                            <img src="emblem/raw/28-473_255-71.4_FlipBackgroundHorizontal_BackgroundMaximizeAlpha_128" />
+                        </div>
+                    </div>
+                    Example: <mark><a href="https://emblem.werdes.net/emblem/c19c41d3-752d-e911-81a8-cde2ac1eed30/64?options=BackgroundMaximizeAlpha,ForegroundMaximizeAlpha">https://emblem.werdes.net/emblem/c19c41d3-752d-e911-81a8-cde2ac1eed30/64?options=BackgroundMaximizeAlpha,ForegroundMaximizeAlpha</a></mark>
+                    </p>
+
                     <h5 class="card-title">Caching</h5>
                     <p class="card-text">Individual emblems are cached for <strong>24 hours</strong> to reduce API calls.</p>
 
@@ -233,6 +278,80 @@
             getStats();
             getCountEmblems();
         });
+
+
+
+        var _timer;
+        const _interval = 500;
+
+        $('#guild-search').on('keyup', function () {
+            clearTimeout(_timer);
+            _timer = setTimeout(guildSearchInputFinished, _interval);
+        });
+        $('#guild-search').on('keydown', function () {
+            guildSearchHideDetails();
+            clearTimeout(_timer);
+        });
+
+        function guildSearchInputFinished() {
+
+            $('#guild-search-loading-indicator').removeClass('d-none');
+            var query = $('#guild-search').val();
+
+            if (query) {
+                $.ajax({
+                    url: "https://api.guildwars2.com/v2/guild/search?name=" + query,
+                    dataType: "json",
+                    complete: function (data) {
+                        var results = data.responseJSON;
+                        if (results.length > 0) {
+                            var id = results[0];
+
+                            $.ajax({
+                                url: "https://api.guildwars2.com/v2/guild/" + id,
+                                cache: true,
+                                dataType: "json",
+                                complete: function (guildData) {
+
+                                    var guild = guildData.responseJSON;
+                                    $('#guild-search-details-emblem').attr('src', 'https://emblem.werdes.net/emblem/' + guild.id);
+                                    $('#guild-search-details-emblem-128').val('https://emblem.werdes.net/emblem/' + guild.id);
+                                    $('#guild-search-details-emblem-64').val('https://emblem.werdes.net/emblem/' + guild.id
+                                    + '/64');
+                                    $('#guild-search-details-title').text(guild.name + '[' + guild.tag + ']');
+                                    $('#guild-search-details').removeClass('d-none');
+                                    guildSearchHideLoading();
+                                },
+                                error: function () {
+                                    guildSearchHideLoading();
+                                    guildSearchHideDetails();
+                                }
+                            });
+                        }
+                        else {
+                            guildSearchHideLoading();
+                            guildSearchHideDetails();
+                        }
+                    },
+                    error: function () {
+                        guildSearchHideLoading();
+                        guildSearchHideDetails();
+                    }
+                });
+            }
+            else {
+                guildSearchHideLoading();
+                guildSearchHideDetails();
+            }
+        }
+
+        function guildSearchHideLoading() {
+            $('#guild-search-loading-indicator').addClass('d-none');
+        }
+
+        function guildSearchHideDetails() {
+            $('#guild-search-details').addClass('d-none');
+        }
 
 
         function getCountEmblems() {
@@ -534,7 +653,7 @@
             var content = '';
             Object.keys(requested_emblems).forEach(function (descriptor, idx) {
                 var servings = requested_emblems[descriptor];
-                content += '<div class="float-left"><a href="https://emblem.werdes.net/emblem/raw/' + descriptor + '"><img height="64" width="64" src="https://emblem.werdes.net/emblem/raw/' + descriptor + '" class="mr-2" alt="" title="Served ' + servings.toThousandSeparator() + ' times"></div></div>'
+                content += '<div class="float-left"><a href="https://emblem.werdes.net/emblem/raw/' + descriptor + '"><img height="64" width="64" src="emblem/raw/' + descriptor + '" class="mr-2" alt="" title="Served ' + servings.toThousandSeparator() + ' times"></div></div>'
             });
 
             content += '<div class="clearfix"></div>';
@@ -547,7 +666,7 @@
             Object.keys(guild_servings_total).forEach(function (guildId, idx) {
                 var guildNameContainerId = 'top-guilds-guild-' + guildId + '-name';
                 var servings = guild_servings_total[guildId];
-                content += '<div class="media"> <img height="64" width="64" src="https://emblem.werdes.net/emblem/' + guildId + '" class="mr-3" alt=""><div class="media-body"><b><span id="' + guildNameContainerId + '"></span></b><br /><span class="text-muted"> requested ' + servings.toThousandSeparator() + ' times</span></div></div>'
+                content += '<div class="media"> <img height="64" width="64" src="emblem/' + guildId + '" class="mr-3" alt=""><div class="media-body"><b><span id="' + guildNameContainerId + '"></span></b><br /><span class="text-muted"> requested ' + servings.toThousandSeparator() + ' times</span></div></div>'
             });
 
             $('#chart-top-guilds').html(content);

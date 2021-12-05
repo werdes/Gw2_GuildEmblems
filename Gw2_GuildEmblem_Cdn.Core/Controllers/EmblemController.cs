@@ -1,6 +1,6 @@
-﻿using Gw2_GuildEmblem_Cdn.Core.Configuration;
-using Gw2_GuildEmblem_Cdn.Core.Custom;
+﻿using Gw2_GuildEmblem_Cdn.Core.Custom;
 using Gw2_GuildEmblem_Cdn.Core.Extensions;
+using Gw2_GuildEmblem_Cdn.Core.Model;
 using Gw2_GuildEmblem_Cdn.Core.Utility;
 using Gw2_GuildEmblem_Cdn.Core.Utility.Interfaces;
 using Gw2Sharp.WebApi;
@@ -13,6 +13,7 @@ using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Gw2_GuildEmblem_Cdn.Core.Utility.ImageUtility;
 
@@ -26,11 +27,13 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         public const string EMBLEM_STATUS_HEADER_KEY = "Emblem-Status";
         public const string EMBLEM_DESCRIPTOR_HEADER_KEY = "Emblem-Descriptor";
 
-        private readonly ILogger _log = Log.Factory.CreateLogger<EmblemController>();
+        private readonly ILogger _log;
         private readonly IConfiguration _config;
         private readonly IEmblemCacheUtility _cache;
         private readonly IApiUtility _api;
         private readonly IStatisticsUtility _statistics;
+
+        private static Regex _regexManipulationOptions = new Regex($"\\b(\\w*({Enum.GetNames(typeof(ManipulationOption)).Join("|")})\\w*)\\b", RegexOptions.IgnoreCase);
 
         public enum EmblemStatus
         {
@@ -38,43 +41,13 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
             NotFound
         }
 
-        public EmblemController(IConfiguration config, IEmblemCacheUtility cache, IApiUtility api, IStatisticsUtility statistics)
+        public EmblemController(IConfiguration config, IEmblemCacheUtility cache, IApiUtility api, IStatisticsUtility statistics, ILogger<EmblemController> log)
         {
             _config = config;
             _cache = cache;
             _api = api;
             _statistics = statistics;
-        }
-
-        /// <summary>
-        /// Returns the Guild emblem of said guild-id in 128x128px
-        /// Empty emblem when guild not found/guild has no emblem
-        /// 500 on random exceptions
-        /// </summary>
-        /// <param name="guildId"></param>
-        /// <returns></returns>
-        [HttpGet]
-        [EnableCors(Startup.AllowSpecificOriginsName)]
-        [Route("emblem/{guildId}")]
-        [ResponseCache(Duration = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/)]
-        [LogStatistics]
-        public async Task<IActionResult> Get(string guildId)
-        {
-            try
-            {
-
-                //Register for Request (If it comes through to here, it's not cached)
-                _statistics.RegisterResponseAsync(ControllerContext.HttpContext.Request, false);
-                _statistics.RegisterReferrerAsync(ControllerContext.HttpContext.Request, false);
-
-                return await GetInternal(guildId, DEFAULT_IMAGE_SIZE);
-            }
-            catch (Exception ex)
-            {
-                _log.LogError(ex, guildId);
-            }
-
-            return StatusCode(500);
+            _log = log;
         }
 
         /// <summary>
@@ -85,10 +58,12 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// <returns></returns>
         [HttpGet]
         [EnableCors(Startup.AllowSpecificOriginsName)]
-        [Route("emblem/{guildId}/{size}")]
-        [ResponseCache(Duration = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/)]
+        [Route("emblem/{guildId}/{size=128}")]
+        [ResponseCache(
+            Duration = 60 /*Seconds*/ * 60 /*Minutes*/ * 24 /*Hours*/,
+            VaryByQueryKeys = new string[] {"options"})]
         [LogStatistics]
-        public async Task<IActionResult> GetResized(string guildId, int size)
+        public async Task<IActionResult> GetResized(string guildId, int size, [FromQuery] string options)
         {
             try
             {
@@ -98,7 +73,9 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
 
                 //confine sizes
                 size = Math.Min(Math.Max(MIN_IMAGE_SIZE, size), MAX_IMAGE_SIZE);
-                return await GetInternal(guildId, size);
+                List<ManipulationOption> lstOptions = ResolveOptions(options);
+
+                return await GetInternal(guildId, size, lstOptions);
             }
             catch (Exception ex)
             {
@@ -145,7 +122,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// <param name="guildId"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        private async Task<IActionResult> GetInternal(string guildId, int size)
+        private async Task<IActionResult> GetInternal(string guildId, int size, List<ManipulationOption> options)
         {
             SKBitmap retImage;
             Guild guild = await _api.GetGuild(guildId);
@@ -153,16 +130,16 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
             if (guild != null && guild.Emblem != null)
             {
                 //Try to find in cache first
-                if (!_cache.TryGetEmblem(guild, size, out retImage))
+                if (!_cache.TryGetEmblem(guild, size, options, out retImage))
                 {
                     (Emblem emblemBackground, Emblem emblemForeground, List<Gw2Sharp.WebApi.V2.Models.Color> colors) = await _api.GetEmblemInformation(guild);
 
-                    retImage = await CreateEmblem(guild, emblemBackground, emblemForeground, colors, size);
+                    retImage = await CreateEmblem(guild, emblemBackground, emblemForeground, colors, size, options);
 
-                    _cache.SetEmblem(guild, size, retImage);
+                    _cache.SetEmblem(guild, size, options, retImage);
                 }
 
-                string descriptor = _cache.GetEmblemDescriptor(guild, size);
+                string descriptor = _cache.GetEmblemDescriptor(guild, size, options);
                 return retImage.ToActionResult(this, SKEncodedImageFormat.Png, EmblemStatus.OK, descriptor);
             }
             else
@@ -171,7 +148,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
                 retImage = GetNullEmblem(size);
                 if (retImage != null)
                 {
-                    string descriptor = _cache.GetEmblemDescriptor(null, size);
+                    string descriptor = _cache.GetEmblemDescriptor(null, size, options);
                     return retImage.ToActionResult(this, SKEncodedImageFormat.Png, EmblemStatus.NotFound, descriptor);
                 }
 
@@ -188,15 +165,15 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         private SKBitmap GetNullEmblem(int size)
         {
             SKBitmap retImage = null;
+            List<ManipulationOption> lstOptions = new List<ManipulationOption>();
 
-            if (!_cache.TryGetEmblem(null, size, out retImage))
+            if (!_cache.TryGetEmblem(null, size, lstOptions, out retImage))
             {
                 string path = _config["nullEmblem"];
                 retImage = SKBitmap.Decode(path);
                 retImage = ImageUtility.Resize(retImage, size);
 
-
-                _cache.SetEmblem(null, size, retImage);
+                _cache.SetEmblem(null, size, lstOptions, retImage);
             }
 
             return retImage;
@@ -211,13 +188,13 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
         /// <param name="colors"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        private async Task<SKBitmap> CreateEmblem(Guild guild, Emblem emblemBackground, Emblem emblemForeground, List<Color> colors, int size)
+        private async Task<SKBitmap> CreateEmblem(Guild guild, Emblem emblemBackground, Emblem emblemForeground, List<Color> colors, int size, List<ManipulationOption> options)
         {
             //Layer back- and foreground
             RenderUrl[] backgrounds = emblemBackground.Layers.ToArray();
             RenderUrl[] foregrounds = emblemForeground.Layers.Skip(1).Select(x => x).ToArray(); //First image in foreground layers is not used - it's some weird red version 
 
-            List<(RenderUrl, SKColor, List<RotateFlipType>)> lstLayers = new List<(RenderUrl, SKColor, List<RotateFlipType>)>();
+            List<(RenderUrl, SKColor, List<ImageManipulation>)> lstLayers = new List<(RenderUrl, SKColor, List<ImageManipulation>)>();
 
             //Put together background-images with url, color and rotation instructions
             for (int i = 0; i < backgrounds.Length; i++)
@@ -227,15 +204,17 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
                 if (guild.Emblem.Background.Colors.TryGet(i, out colorId))
                 {
                     Color color = colors.Where(x => x.Id == colorId).FirstOrDefault();
-                    List<RotateFlipType> flipTypes = new List<RotateFlipType>();
+                    List<ImageManipulation> imageManipulations = new List<ImageManipulation>();
                     if (color != null)
                     {
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipBackgroundHorizontal))
-                            flipTypes.Add(RotateFlipType.FlipX);
+                            imageManipulations.Add(ImageManipulation.FlipX);
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipBackgroundVertical))
-                            flipTypes.Add(RotateFlipType.FlipY);
+                            imageManipulations.Add(ImageManipulation.FlipY);
+                        if (options.Contains(ManipulationOption.BackgroundMaximizeAlpha))
+                            imageManipulations.Add(ImageManipulation.MaximizeAlpha);
 
-                        lstLayers.Add((backgrounds[i], new SKColor((byte)color.Cloth.Rgb[0], (byte)color.Cloth.Rgb[1], (byte)color.Cloth.Rgb[2]), flipTypes));
+                        lstLayers.Add((backgrounds[i], new SKColor((byte)color.Cloth.Rgb[0], (byte)color.Cloth.Rgb[1], (byte)color.Cloth.Rgb[2]), imageManipulations));
                     }
                 }
             }
@@ -252,13 +231,15 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
 
                     if (color != null)
                     {
-                        List<RotateFlipType> transformations = new List<RotateFlipType>();
+                        List<ImageManipulation> imageManipulations = new List<ImageManipulation>();
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipForegroundHorizontal))
-                            transformations.Add(RotateFlipType.FlipX);
+                            imageManipulations.Add(ImageManipulation.FlipX);
                         if (guild.Emblem.Flags.Any(x => x.Value == GuildEmblemFlag.FlipForegroundVertical))
-                            transformations.Add(RotateFlipType.FlipY);
+                            imageManipulations.Add(ImageManipulation.FlipY);
+                        if (options.Contains(ManipulationOption.ForegroundMaximizeAlpha))
+                            imageManipulations.Add(ImageManipulation.MaximizeAlpha);
 
-                        lstLayers.Add((foregrounds[i], new SKColor((byte)color.Cloth.Rgb[0], (byte)color.Cloth.Rgb[1], (byte)color.Cloth.Rgb[2]), transformations));
+                        lstLayers.Add((foregrounds[i], new SKColor((byte)color.Cloth.Rgb[0], (byte)color.Cloth.Rgb[1], (byte)color.Cloth.Rgb[2]), imageManipulations));
                     }
                 }
             }
@@ -268,15 +249,15 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
             // 3.) Apply Rotations/Flips
             // 4.) Resize if necessary
             List<SKBitmap> layers = new List<SKBitmap>();
-            foreach ((RenderUrl url, SKColor shadeColor, List<RotateFlipType> transformations) in lstLayers)
+            foreach ((RenderUrl url, SKColor shadeColor, List<ImageManipulation> transformations) in lstLayers)
             {
                 SKBitmap layer =
-                        ImageUtility.ApplyRotations(
+                        ImageUtility.ApplyManipulations(
                             ImageUtility.ShadeImageFromAlpha(
                                 ImageUtility.GetSKBitmap(await _api.GetImage(url)),
                             shadeColor),
                         transformations);
-                
+
                 if (size != DEFAULT_IMAGE_SIZE)
                 {
                     layer = ImageUtility.Resize(layer, size);
@@ -291,6 +272,32 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
             //Merge layers
             SKBitmap retImage = ImageUtility.LayerImages(layers, size);
             return retImage;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="optionString"></param>
+        private List<ManipulationOption> ResolveOptions(string optionString)
+        {
+            List<ManipulationOption> retVal = new List<ManipulationOption>();
+            if (!string.IsNullOrWhiteSpace(optionString))
+            {
+                try
+                {
+                    MatchCollection matches = _regexManipulationOptions.Matches(optionString);
+                    foreach (Match match in matches)
+                    {
+                        retVal.Add(Enum.Parse<ManipulationOption>(match.Value));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(optionString, ex);
+                }
+            }
+
+            return retVal;
         }
     }
 }

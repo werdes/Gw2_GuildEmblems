@@ -13,14 +13,10 @@
 
   <ItemGroup>
     <Content Remove="log4net.Development.config" />
-    <Content Remove="log4net.Docker.config" />
     <Content Remove="log4net.Production.config" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="log4net.Docker.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Include="log4net.Production.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -47,6 +43,10 @@
     <None Update="Resources\null_emblem.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Configuration\" />
   </ItemGroup>
 
 

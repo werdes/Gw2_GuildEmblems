@@ -6,6 +6,7 @@ using Gw2Sharp.WebApi.Caching;
 using Gw2Sharp.WebApi.V2.Clients;
 using Gw2Sharp.WebApi.V2.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -24,7 +25,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         //    get => _instance.Value;
         //}
 
-        private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log;
         private readonly IConfiguration _config;
 
         private Gw2Sharp.Gw2Client _memoryCachedClient = null;
@@ -36,9 +37,10 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         private MemoryCacheMethod _memoryWebApiCacheMethod = null;
         private ArchiveCacheMethod _archiveWebApiCacheMethod = null;
 
-        public ApiUtility(IConfiguration config, IStatisticsUtility statistics)
+        public ApiUtility(IConfiguration config, IStatisticsUtility statistics, ILogger<ApiUtility> log)
         {
             _config = config;
+            _log = log;
 
             _archiveRenderCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(7), Path.Combine(_config["cachePath"], "render.zip"));
             _archiveWebApiCacheMethod = new DelayedExpiryArchiveCacheMethod(TimeSpan.FromDays(7), Path.Combine(_config["cachePath"], "cache.zip"));
@@ -55,8 +57,8 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             };
 
 
-            _memoryCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware(statistics));
-            _archiveCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware(statistics));
+            _memoryCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware(statistics, _log));
+            _archiveCachedConnection.Middleware.Insert(0, new RateLimiterMiddleware(statistics, _log));
 
             _memoryCachedConnection.Middleware.Insert(0, new StatisticsMiddleware(statistics));
             _archiveCachedConnection.Middleware.Insert(0, new StatisticsMiddleware(statistics));
@@ -80,7 +82,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, guildId);
             }
             return guild;
         }
@@ -115,7 +117,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, guild.ToString());
             }
 
             return (null, null, null);

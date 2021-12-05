@@ -5,6 +5,7 @@ using Gw2Sharp.WebApi.V2.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using System;
@@ -25,7 +26,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         public const string ZIP_NAME = "stats.zip";
         private const string NO_REFERRER_NAME = "none";
 
-        private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log;
         private readonly IConfiguration _config;
 
         private static Regex _guidRegex = new Regex(@"(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}", RegexOptions.Compiled);
@@ -38,10 +39,12 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         private StatisticsContainer _container;
 
 
-        public StatisticsUtility(IConfiguration config)
+        public StatisticsUtility(IConfiguration config, ILogger<StatisticsUtility> log)
         {
-            _runDiskJob = true;
             _config = config;
+            _log = log;
+
+            _runDiskJob = true;
             _container = new StatisticsContainer();
 
             int interval;
@@ -55,7 +58,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, "Constructor");
             }
         }
 
@@ -109,7 +112,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, "DiskJob");
             }
         }
 
@@ -248,7 +251,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, guild.ToString());
             }
         }
 
@@ -309,7 +312,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, "Response");
             }
         }
 
@@ -358,7 +361,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, requestedGuildId.ToString());
             }
         }
 
@@ -404,7 +407,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, endpoint);
             }
         }
 
@@ -437,7 +440,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, "Ratelimit Exceedance");
             }
         }
 
@@ -467,9 +470,13 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
                     RegisterReferrerInternal(null, servedFromCache);
                 }
             }
+            catch (ObjectDisposedException)
+            {
+                // Do nothing :>
+            }
             catch (Exception ex)
             {
-                _log.Error(ex);
+                _log.LogError(ex, "Referrer");
             }
         }
 

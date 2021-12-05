@@ -1,5 +1,4 @@
-﻿using Gw2_GuildEmblem_Cdn.Core.Configuration;
-using Gw2_GuildEmblem_Cdn.Core.Model.Statistics;
+﻿using Gw2_GuildEmblem_Cdn.Core.Model.Statistics;
 using Gw2_GuildEmblem_Cdn.Core.Model.Statistics.Output;
 using Gw2_GuildEmblem_Cdn.Core.Utility.Interfaces;
 using Microsoft.AspNetCore.Cors;
@@ -17,18 +16,19 @@ namespace Gw2_GuildEmblem_Cdn.Core.Controllers
     {
         private const uint MAX_COUNT = 90;
 
-        private readonly ILogger _log = Log.Factory.CreateLogger<StatisticsController>();
+        private readonly ILogger _log;
         private readonly IConfiguration _config;
         private readonly IEmblemCacheUtility _cache;
         private readonly IStatisticsUtility _statistics;
         private object _lock = new object();
 
 
-        public StatisticsController(IConfiguration config, IEmblemCacheUtility cache, IStatisticsUtility statistics)
+        public StatisticsController(IConfiguration config, IEmblemCacheUtility cache, IStatisticsUtility statistics, ILogger<StatisticsController> log)
         {
             _config = config;
             _cache = cache;
             _statistics = statistics;
+            _log = log;
         }
 
         /// <summary>

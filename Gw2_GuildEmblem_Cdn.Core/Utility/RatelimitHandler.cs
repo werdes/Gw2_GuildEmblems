@@ -2,6 +2,7 @@
 using Gw2_GuildEmblem_Cdn.Core.Utility.Interfaces;
 using Gw2Sharp.WebApi.Http;
 using Gw2Sharp.WebApi.V2;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +12,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
 {
     public class RatelimitHandler
     {
-
-        private readonly log4net.ILog _log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        private readonly ILogger _log;
         private readonly IStatisticsUtility _statistics;
 
         private int _limit;
@@ -20,12 +20,13 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
         private Queue<DateTime> _accessTimes;
 
 
-        public RatelimitHandler(IStatisticsUtility statistics, int limit, string name)
+        public RatelimitHandler(IStatisticsUtility statistics, ILogger log, int limit, string name)
         {
             _limit = limit;
             _name = name;
             _accessTimes = new Queue<DateTime>();
             _statistics = statistics;
+            _log = log;
         }
 
         /// <summary>
@@ -104,7 +105,7 @@ namespace Gw2_GuildEmblem_Cdn.Core.Utility
             {
                 if (_accessTimes.Count >= _limit)
                 {
-                    _log.Info($"[{_name}] Waiting for Ratelimit {_accessTimes.Peek()}");
+                    _log.LogInformation($"[{_name}] Waiting for Ratelimit {_accessTimes.Peek()}");
                     _statistics.RegisterRatelimitExceedanceAsync();
 
                     while (_accessTimes.Peek() > DateTime.Now.AddMinutes(-1D))
